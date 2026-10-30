@@ -394,6 +394,27 @@
       margin: 22px 0;
     }
 
+    .old-price {
+      color: var(--muted);
+      font-weight: 700;
+      font-size: .6em;
+      text-decoration-thickness: 2px;
+      margin-right: 6px;
+    }
+
+    .discount-badge {
+      display: inline-block;
+      vertical-align: middle;
+      margin-left: 10px;
+      padding: 6px 12px;
+      border-radius: 999px;
+      background: var(--gold-dark);
+      color: white;
+      font-size: 14px;
+      font-weight: 800;
+      letter-spacing: normal;
+    }
+
     .price small {
       font-size: 15px;
       color: var(--muted);
@@ -812,7 +833,7 @@
         </p>
 
         <div class="hero-actions">
-          <button class="btn btn-gold" onclick="addToCart()">Agregar al carrito — $449</button>
+          <button class="btn btn-gold" onclick="addToCart()">Agregar al carrito — $299</button>
           <a class="btn btn-primary" href="https://wa.me/528129992392" target="_blank">
             Comprar por WhatsApp
           </a>
@@ -827,7 +848,7 @@
 
       <div class="product-showcase">
         <div class="floating-card fc-1">
-          <strong>$449 MXN</strong>
+          <strong><s class="old-price">$349</s> $299 MXN</strong>
           <small>Precio especial de lanzamiento</small>
         </div>
 
@@ -889,7 +910,8 @@
           </p>
 
           <div class="price">
-            $449 <small>MXN</small>
+            <s class="old-price">$349</s> $299 <small>MXN</small>
+            <span class="discount-badge">-14%</span>
           </div>
 
           <div class="feature-list">
@@ -987,7 +1009,7 @@
           Agrega el serum al carrito y finaliza tu compra con Stripe o por WhatsApp.
         </p>
 
-        <button class="btn btn-gold" onclick="addToCart()">Comprar serum — $449 MXN</button>
+        <button class="btn btn-gold" onclick="addToCart()">Comprar serum — $299 MXN</button>
       </div>
     </div>
   </section>
@@ -1009,7 +1031,8 @@
   <script>
     const PRODUCT = {
       name: "Lonier Skin Serum",
-      price: 449,
+      price: 299,
+      compareAtPrice: 349,
       image: "assets/serum-single.png"
     };
 
