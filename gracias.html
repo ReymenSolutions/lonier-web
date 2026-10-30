@@ -31,7 +31,10 @@
 
   <script type="module">
     import { cart } from "/js/cart.js";
+    import { trackPurchase } from "/js/analytics.js";
     import { initLayout, whatsappUrl } from "/js/layout.js";
+
+    initLayout();
 
     const params = new URLSearchParams(location.search);
     const order = params.get("order") || params.get("external_reference");
@@ -73,13 +76,15 @@
       primary.textContent = "Volver al carrito";
       primary.href = "/carrito";
     } else {
+      if (kind === "approved") {
+        const totals = cart.totals();
+        trackPurchase({ orderId: order, total: Number(params.get("total")) || totals.total, lines: totals.lines });
+      }
       cart.clear();
     }
     document.getElementById("waAction").href = whatsappUrl(
       order ? `Hola, tengo una duda sobre mi pedido ${order}.` : "Hola, tengo una duda sobre mi pedido."
     );
-
-    initLayout();
   </script>
 </body>
 </html>

@@ -64,6 +64,12 @@
           <div class="summary-row"><span>Envío</span><span id="sumShipping"></span></div>
           <div class="summary-row total"><span>Total</span><span id="sumTotal"></span></div>
 
+          <div class="ship-progress" id="shipProgress">
+            <div class="ship-bar"><span id="shipBar"></span></div>
+            <p data-free-shipping></p>
+            <button type="button" class="btn btn-ghost btn-small" id="completeBundle" hidden></button>
+          </div>
+
           <div class="error" id="checkoutError" role="alert" hidden></div>
 
           <button class="btn btn-mp" data-provider="mercadopago">Pagar con Mercado Pago</button>
@@ -85,8 +91,9 @@
 
   <script type="module">
     import { STORE, formatMXN } from "/js/store.js";
+    import { trackBeginCheckout } from "/js/analytics.js";
     import { cart } from "/js/cart.js";
-    import { initLayout, imgFallback, whatsappUrl } from "/js/layout.js";
+    import { initLayout, addToCart, imgFallback, whatsappUrl } from "/js/layout.js";
 
     initLayout();
 
@@ -157,6 +164,19 @@
       document.getElementById("sumSavings").textContent = `−${formatMXN(savings)}`;
       document.getElementById("sumSavingsRow").hidden = savings === 0;
       document.getElementById("sumShipping").textContent = shipping ? formatMXN(shipping) : "Gratis";
+
+      const { freeFromQty } = STORE.shipping;
+      const { qty } = cart.totals();
+      document.getElementById("shipProgress").hidden = freeFromQty == null;
+      if (freeFromQty != null) {
+        document.getElementById("shipBar").style.width = `${Math.min(100, (qty / freeFromQty) * 100)}%`;
+        const missing = freeFromQty - qty;
+        const complete = document.getElementById("completeBundle");
+        complete.hidden = missing <= 0;
+        complete.textContent = `+ Agregar ${missing} ${missing === 1 ? "pieza" : "piezas"} y ahorrar ${formatMXN(STORE.shipping.fee)}`;
+        complete.dataset.id = lines[0].product.id;
+        complete.dataset.missing = missing;
+      }
       document.getElementById("sumTotal").textContent = formatMXN(total);
     }
 
@@ -190,6 +210,7 @@
         showError("");
         const customer = readCustomer();
         if (!customer) return;
+        trackBeginCheckout(cart.totals());
 
         const label = btn.textContent;
         payButtons.forEach((b) => (b.disabled = true));
@@ -216,6 +237,11 @@
       const { lines, total } = cart.totals();
       const items = lines.map(({ product, qty }) => `${qty} x ${product.name}`).join(", ");
       window.open(whatsappUrl(`Hola, quiero comprar: ${items}. Total: ${formatMXN(total)} (incluye envío).`), "_blank");
+    });
+
+    document.getElementById("completeBundle").addEventListener("click", (event) => {
+      const { id, missing } = event.currentTarget.dataset;
+      addToCart(id, Number(missing));
     });
 
     window.addEventListener("cart:change", render);

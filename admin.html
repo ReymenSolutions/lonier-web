@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="es-MX">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Panel | Lonier Skin</title>
+  <meta name="robots" content="noindex, nofollow" />
+  <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="/css/styles.css" />
+</head>
+
+<body>
+  <nav class="nav">
+    <div class="container nav-inner">
+      <a href="/" class="brand">Lonier <span>Skin</span> · Panel</a>
+      <button class="btn btn-ghost" id="logout" hidden>Salir</button>
+    </div>
+  </nav>
+
+  <main class="section admin">
+    <div class="container">
+      <form class="panel login" id="login">
+        <h1 class="page-title">Panel de la tienda</h1>
+        <label class="form-grid-label">Contraseña
+          <input type="password" name="password" autocomplete="current-password" required />
+        </label>
+        <button class="btn btn-gold">Entrar</button>
+        <div class="error" id="loginError" hidden></div>
+      </form>
+
+      <div id="dashboard" hidden>
+        <div class="notice" id="emailNotice" hidden></div>
+
+        <section class="panel">
+          <h2>Inventario</h2>
+          <p class="muted admin-help">
+            Las piezas se descuentan solas con cada venta pagada en la tienda. Cuando vendas en Mercado Libre,
+            réstalas aquí (y al revés: ajusta tu publicación de Mercado Libre cuando vendas aquí).
+            Deja el campo vacío para no llevar control de inventario.
+          </p>
+          <div id="stock"></div>
+        </section>
+
+        <section class="panel">
+          <div class="admin-head">
+            <h2>Pedidos pagados</h2>
+            <div class="admin-actions">
+              <select id="filter" aria-label="Filtrar pedidos">
+                <option value="">Todos</option>
+                <option value="pagado" selected>Por enviar</option>
+                <option value="enviado">Enviados</option>
+              </select>
+              <button class="btn btn-ghost" id="exportCsv">Descargar CSV</button>
+              <button class="btn btn-ghost" id="refresh">Actualizar</button>
+            </div>
+          </div>
+          <div id="orders"></div>
+        </section>
+      </div>
+    </div>
+  </main>
+
+  <script type="module">
+    import { formatMXN } from "/js/store.js";
+
+    const KEY = "lonier_admin_pw";
+    let password = "";
+    let state = null;
+    try {
+      password = sessionStorage.getItem(KEY) || "";
+    } catch {}
+
+    const $ = (id) => document.getElementById(id);
+    const escape = (v) => String(v ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+    const date = (iso) => (iso ? new Date(iso).toLocaleString("es-MX", { dateStyle: "medium", timeStyle: "short" }) : "");
+
+    async function api(method, body) {
+      const response = await fetch("/api/admin", {
+        method,
+        headers: { Authorization: `Bearer ${password}`, "Content-Type": "application/json" },
+        body: body ? JSON.stringify(body) : undefined,
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw Object.assign(new Error(data.error || "Error del servidor."), { status: response.status });
+      return data;
+    }
+
+    async function load() {
+      try {
+        state = await api("GET");
+      } catch (error) {
+        showLogin(error.message);
+        return;
+      }
+      try {
+        sessionStorage.setItem(KEY, password);
+      } catch {}
+      $("login").hidden = true;
+      $("dashboard").hidden = false;
+      $("logout").hidden = false;
+
+      const notice = $("emailNotice");
+      notice.hidden = state.emailsEnabled && state.customerEmailsEnabled;
+      notice.textContent = !state.emailsEnabled
+        ? "Los correos de pedidos están desactivados: configura RESEND_API_KEY y ORDER_EMAIL_TO en Vercel."
+        : "Los correos a clientes están desactivados: configura EMAIL_FROM con un dominio verificado en Resend.";
+
+      renderStock();
+      renderOrders();
+    }
+
+    function showLogin(message) {
+      $("login").hidden = false;
+      $("dashboard").hidden = true;
+      $("logout").hidden = true;
+      $("loginError").textContent = message || "";
+      $("loginError").hidden = !message;
+    }
+
+    function renderStock() {
+      $("stock").innerHTML = state.products
+        .map(({ id, name }) => {
+          const qty = state.stock[id];
+          return `
+          <form class="stock-row" data-id="${id}">
+            <strong>${escape(name)}</strong>
+            <span class="stock-badge ${qty == null ? "" : qty <= 0 ? "out" : qty <= 5 ? "low" : "ok"}">
+              ${qty == null ? "Sin control" : qty <= 0 ? "Agotado" : `${qty} piezas`}
+            </span>
+            <input type="number" name="qty" min="0" step="1" value="${qty ?? ""}" placeholder="Sin control" aria-label="Piezas de ${escape(name)}" />
+            <button class="btn btn-gold">Guardar</button>
+          </form>`;
+        })
+        .join("");
+    }
+
+    function orderItems(order) {
+      return order.lines.length
+        ? order.lines.map((l) => `${l.qty} × ${escape(l.name)}`).join("<br>")
+        : escape(order.summary);
+    }
+
+    function orderAddress(c) {
+      return c.fullAddress
+        ? escape(c.fullAddress)
+        : [c.street, `Col. ${c.neighborhood}`, `C.P. ${c.zip}`, `${c.city}, ${c.state}`].map(escape).join("<br>");
+    }
+
+    function renderOrders() {
+      const filter = $("filter").value;
+      const orders = state.orders.filter((o) => !filter || o.status === filter);
+      if (!orders.length) {
+        $("orders").innerHTML = `<p class="muted">No hay pedidos ${filter === "pagado" ? "por enviar" : filter === "enviado" ? "enviados" : "todavía"}.</p>`;
+        return;
+      }
+      $("orders").innerHTML = orders
+        .map((o) => {
+          const c = o.customer;
+          return `
+          <article class="order-card">
+            <header>
+              <div>
+                <strong>${escape(o.id)}</strong>
+                <span class="muted">${date(o.paidAt)} · ${escape(o.provider)}</span>
+              </div>
+              <span class="stock-badge ${o.status === "enviado" ? "ok" : "low"}">${o.status === "enviado" ? "Enviado" : "Por enviar"}</span>
+            </header>
+            <div class="order-cols">
+              <div><small>Productos</small>${orderItems(o)}<br><strong>${formatMXN(o.total)}</strong> <span class="muted">(envío ${o.shipping ? formatMXN(o.shipping) : "gratis"})</span></div>
+              <div><small>Cliente</small>${escape(c.firstName)} ${escape(c.lastName)}<br>
+                <a href="https://wa.me/52${escape(c.phone)}" target="_blank" rel="noopener">${escape(c.phone)}</a><br>
+                <a href="mailto:${escape(c.email)}">${escape(c.email)}</a></div>
+              <div><small>Dirección</small>${orderAddress(c)}${c.notes ? `<br><em>${escape(c.notes)}</em>` : ""}</div>
+            </div>
+            ${
+              o.status === "enviado"
+                ? `<p class="muted">Enviado el ${date(o.shippedAt)}${o.tracking ? ` · Guía: <strong>${escape(o.tracking)}</strong>` : ""}</p>`
+                : `<form class="ship-form" data-id="${escape(o.id)}">
+                     <input name="tracking" placeholder="Número de guía (opcional)" maxlength="120" />
+                     <button class="btn btn-primary">Marcar como enviado</button>
+                   </form>`
+            }
+          </article>`;
+        })
+        .join("");
+    }
+
+    $("login").addEventListener("submit", (event) => {
+      event.preventDefault();
+      password = event.target.password.value;
+      load();
+    });
+
+    $("logout").addEventListener("click", () => {
+      password = "";
+      try {
+        sessionStorage.removeItem(KEY);
+      } catch {}
+      showLogin();
+    });
+
+    $("stock").addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const form = event.target;
+      const button = form.querySelector("button");
+      button.disabled = true;
+      try {
+        const { stock } = await api("POST", { action: "setStock", productId: form.dataset.id, qty: form.qty.value });
+        state.stock = stock;
+        renderStock();
+      } catch (error) {
+        alert(error.message);
+        button.disabled = false;
+      }
+    });
+
+    $("orders").addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const form = event.target;
+      form.querySelector("button").disabled = true;
+      try {
+        const { order, emailed } = await api("POST", { action: "markShipped", orderId: form.dataset.id, tracking: form.tracking.value });
+        state.orders = state.orders.map((o) => (o.id === order.id ? order : o));
+        renderOrders();
+        if (emailed) alert("Listo. Le enviamos un correo al cliente con su guía.");
+      } catch (error) {
+        alert(error.message);
+        form.querySelector("button").disabled = false;
+      }
+    });
+
+    $("filter").addEventListener("change", renderOrders);
+    $("refresh").addEventListener("click", load);
+
+    $("exportCsv").addEventListener("click", () => {
+      const cell = (v) => `"${String(v ?? "").replace(/"/g, '""')}"`;
+      const rows = [["Pedido", "Fecha de pago", "Estado", "Pasarela", "Productos", "Total", "Envío", "Nombre", "Teléfono", "Correo", "Dirección", "Referencias", "Guía"]];
+      for (const o of state.orders) {
+        const c = o.customer;
+        rows.push([
+          o.id, date(o.paidAt), o.status, o.provider,
+          o.lines.length ? o.lines.map((l) => `${l.qty} x ${l.name}`).join("; ") : o.summary,
+          o.total, o.shipping, `${c.firstName} ${c.lastName}`.trim(), c.phone, c.email,
+          c.fullAddress || [c.street, `Col. ${c.neighborhood}`, `C.P. ${c.zip}`, c.city, c.state].join(", "),
+          c.notes, o.tracking,
+        ]);
+      }
+      const blob = new Blob(["﻿" + rows.map((r) => r.map(cell).join(",")).join("\n")], { type: "text/csv" });
+      const link = Object.assign(document.createElement("a"), {
+        href: URL.createObjectURL(blob),
+        download: `pedidos-lonier-${new Date().toISOString().slice(0, 10)}.csv`,
+      });
+      link.click();
+      URL.revokeObjectURL(link.href);
+    });
+
+    if (password) load();
+    else showLogin();
+  </script>
+</body>
+</html>

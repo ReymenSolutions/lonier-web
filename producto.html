@@ -42,6 +42,10 @@
 
           <div class="feature-list" id="features"></div>
 
+          <div class="bundles" id="bundles" role="radiogroup" aria-label="Elige cuántas piezas"></div>
+
+          <p class="stock-note" data-stock-note hidden></p>
+
           <div class="qty-row">
             <div class="qty">
               <button type="button" data-qty="-1" aria-label="Quitar uno">−</button>
@@ -78,9 +82,10 @@
   <div id="site-footer"></div>
 
   <script type="module">
-    import { STORE, PRODUCTS, getProduct, formatMXN } from "/js/store.js";
-    import { cart } from "/js/cart.js";
-    import { initLayout, addToCartAndOpen, bindPrices, imgFallback, whatsappUrl } from "/js/layout.js";
+    import { STORE, PRODUCTS, getProduct, shippingFor, shippingSummary, formatMXN } from "/js/store.js";
+    import { initLayout, addToCart, addToCartAndOpen, bindPrices, imgFallback, whatsappUrl } from "/js/layout.js";
+    import { applyStock } from "/js/stock.js";
+    import { trackViewItem } from "/js/analytics.js";
 
     initLayout();
 
@@ -100,9 +105,7 @@
       document.getElementById("howToUse").innerHTML = product.howToUse.map((s) => `<li>${s}</li>`).join("");
       bindPrices(product);
 
-      const { fee, freeOver, label } = STORE.shipping;
-      document.getElementById("shippingInfo").textContent =
-        `${label}: ${formatMXN(fee)}` + (freeOver != null ? ` (gratis desde ${formatMXN(freeOver)})` : "");
+      document.getElementById("shippingInfo").textContent = shippingSummary();
       document.getElementById("waLink").href = whatsappUrl(`Hola, tengo una pregunta sobre ${product.name}.`);
 
       if (STORE.mercadoLibreUrl) {
@@ -132,23 +135,57 @@
 
       let quantity = 1;
       const qtyEl = document.getElementById("qty");
-      document.querySelectorAll("[data-qty]").forEach((btn) =>
-        btn.addEventListener("click", () => {
-          quantity = Math.max(1, Math.min(STORE.maxQtyPerItem, quantity + Number(btn.dataset.qty)));
-          qtyEl.textContent = quantity;
+      const bundlesEl = document.getElementById("bundles");
+      const freeQty = STORE.shipping.freeFromQty;
+
+      // Paquetes de 1, 2 y 3 piezas; el de envío gratis va destacado.
+      const bundleSizes = freeQty != null && freeQty > 1 ? [...new Set([1, freeQty - 1, freeQty])] : [];
+      bundlesEl.innerHTML = bundleSizes
+        .map((n) => {
+          const shipping = shippingFor(n);
+          return `
+          <button type="button" class="bundle${n === freeQty ? " featured" : ""}" data-bundle="${n}" role="radio">
+            ${n === freeQty ? `<span class="bundle-tag">Envío gratis</span>` : ""}
+            <strong>${n} ${n === 1 ? "pieza" : "piezas"}</strong>
+            <span class="bundle-price">${formatMXN(product.price * n)}</span>
+            <small>${shipping ? `+ ${formatMXN(shipping)} de envío` : `Ahorras ${formatMXN(STORE.shipping.fee)} de envío`}</small>
+          </button>`;
         })
+        .join("");
+
+      function setQuantity(n) {
+        quantity = Math.max(1, Math.min(STORE.maxQtyPerItem, n));
+        qtyEl.textContent = quantity;
+        bundlesEl.querySelectorAll("[data-bundle]").forEach((b) => {
+          const selected = Number(b.dataset.bundle) === quantity;
+          b.classList.toggle("selected", selected);
+          b.setAttribute("aria-checked", selected);
+        });
+      }
+
+      bundlesEl.addEventListener("click", (event) => {
+        const btn = event.target.closest("[data-bundle]");
+        if (btn) setQuantity(Number(btn.dataset.bundle));
+      });
+      document.querySelectorAll("[data-qty]").forEach((btn) =>
+        btn.addEventListener("click", () => setQuantity(quantity + Number(btn.dataset.qty)))
       );
+      setQuantity(1);
 
       document.getElementById("addBtn").addEventListener("click", () => {
         addToCartAndOpen(product.id, quantity);
-        quantity = 1;
-        qtyEl.textContent = quantity;
+        setQuantity(1);
       });
 
       document.getElementById("buyNow").addEventListener("click", () => {
-        cart.add(product.id, quantity);
+        addToCart(product.id, quantity);
         location.href = "/carrito";
       });
+
+      ["addBtn", "buyNow"].forEach((id) => (document.getElementById(id).dataset.add = product.id));
+      document.querySelector("[data-stock-note]").dataset.stockNote = product.id;
+      applyStock();
+      trackViewItem(product);
 
       const schema = {
         "@context": "https://schema.org",

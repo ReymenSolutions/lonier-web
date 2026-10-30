@@ -1,13 +1,14 @@
 // Crea una preferencia de Mercado Pago Checkout Pro y devuelve la URL de pago.
 // https://www.mercadopago.com.mx/developers/es/reference/preferences/_checkout_preferences/post
-import { checkoutHandler, formatAddress } from "../_lib/order.js";
+import { checkoutHandler } from "../_lib/order.js";
+import { paymentMetadata } from "../_lib/fulfill.js";
 
 export default checkoutHandler({
   provider: "Mercado Pago",
   envVar: "MP_ACCESS_TOKEN",
   async createCheckout({ order, secret, baseUrl }) {
     const { customer: c } = order;
-    const returnUrl = `${baseUrl}/gracias?provider=mercadopago&order=${order.orderId}`;
+    const returnUrl = `${baseUrl}/gracias?provider=mercadopago&order=${order.orderId}&total=${order.total}`;
 
     const response = await fetch("https://api.mercadopago.com/checkout/preferences", {
       method: "POST",
@@ -36,11 +37,8 @@ export default checkoutHandler({
           phone: { number: c.phone },
           address: { zip_code: c.zip, street_name: c.street },
         },
-        metadata: {
-          order_id: order.orderId,
-          shipping_address: formatAddress(c),
-          notes: c.notes || "",
-        },
+        metadata: paymentMetadata(order),
+        notification_url: `${baseUrl}/api/webhooks/mercadopago?source_news=webhooks`,
         back_urls: { success: returnUrl, pending: returnUrl, failure: returnUrl },
         auto_return: "approved",
         statement_descriptor: "LONIER SKIN",

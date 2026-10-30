@@ -3,56 +3,48 @@ import assert from "node:assert/strict";
 import mercadopago from "../api/checkout/mercadopago.js";
 import stripe from "../api/checkout/stripe.js";
 import { buildOrder } from "../api/_lib/order.js";
+import { shippingFor, freeShippingMessage } from "../js/store.js";
+import { createFakeServices, customer, callNode as call, REDIS_URL } from "./helpers.js";
 
-const customer = {
-  firstName: "Ana",
-  lastName: "López",
-  email: "ana@example.com",
-  phone: "+52 (81) 1234-5678",
-  street: "Av. Siempre Viva 123",
-  neighborhood: "Centro",
-  zip: "64000",
-  city: "Monterrey",
-  state: "Nuevo León",
-};
-
-function call(handler, body, method = "POST") {
-  const req = { method, body, headers: { host: "tienda.test", "x-forwarded-proto": "https" } };
-  return new Promise((resolve) => {
-    const res = {
-      headers: {},
-      setHeader(k, v) { this.headers[k] = v; },
-      status(code) { this.code = code; return this; },
-      json(data) { resolve({ status: this.code, data }); },
-    };
-    handler(req, res);
-  });
-}
-
-let requests;
+let services;
 const realFetch = globalThis.fetch;
 beforeEach(() => {
-  requests = [];
-  process.env.MP_ACCESS_TOKEN = "TEST-token";
-  process.env.STRIPE_SECRET_KEY = "sk_test_x";
+  services = createFakeServices();
+  globalThis.fetch = services.fetch;
+  Object.assign(process.env, {
+    MP_ACCESS_TOKEN: "TEST-token",
+    STRIPE_SECRET_KEY: "sk_test_x",
+    KV_REST_API_URL: REDIS_URL,
+    KV_REST_API_TOKEN: "redis-token",
+  });
   delete process.env.SITE_URL;
-  globalThis.fetch = async (url, init) => {
-    requests.push({ url, init });
-    const body = url.includes("mercadopago") ? { init_point: "https://mp.test/pay" } : { url: "https://stripe.test/pay" };
-    return new Response(JSON.stringify(body), { status: 200 });
-  };
 });
 afterEach(() => {
   globalThis.fetch = realFetch;
 });
 
-test("buildOrder usa el precio del catálogo y suma el envío", () => {
-  const order = buildOrder({ items: [{ id: "lonier-skin-serum", qty: 2, price: 1 }], customer });
-  assert.equal(order.lines[0].unitPrice, 299);
-  assert.equal(order.subtotal, 598);
-  assert.equal(order.shipping, 99);
-  assert.equal(order.total, 697);
-  assert.equal(order.customer.phone, "8112345678");
+const external = () => services.requests.filter((r) => !r.url.startsWith(REDIS_URL));
+
+test("envío: $99 hasta 2 piezas, gratis desde 3", () => {
+  assert.equal(shippingFor(1), 99);
+  assert.equal(shippingFor(2), 99);
+  assert.equal(shippingFor(3), 0);
+  assert.equal(freeShippingMessage(1), "Agrega 2 piezas más y tu envío es gratis.");
+  assert.equal(freeShippingMessage(2), "Agrega 1 pieza más y tu envío es gratis.");
+  assert.equal(freeShippingMessage(3), "¡Tu envío es gratis!");
+});
+
+test("buildOrder usa el precio del catálogo y aplica envío gratis desde 3 piezas", () => {
+  const two = buildOrder({ items: [{ id: "lonier-skin-serum", qty: 2, price: 1 }], customer });
+  assert.equal(two.lines[0].unitPrice, 299);
+  assert.equal(two.subtotal, 598);
+  assert.equal(two.shipping, 99);
+  assert.equal(two.total, 697);
+  assert.equal(two.customer.phone, "8112345678");
+
+  const three = buildOrder({ items: [{ id: "lonier-skin-serum", qty: 3 }], customer });
+  assert.equal(three.shipping, 0);
+  assert.equal(three.total, 897);
 });
 
 test("rechaza productos inexistentes, carrito vacío y datos incompletos", async () => {
@@ -67,36 +59,68 @@ test("rechaza productos inexistentes, carrito vacío y datos incompletos", async
     assert.equal(status, 400, JSON.stringify(body));
     assert.ok(data.error);
   }
-  assert.equal(requests.length, 0);
+  assert.equal(external().length, 0);
 });
 
-test("Mercado Pago: crea la preferencia con precio, envío y URLs de regreso", async () => {
-  const { status, data } = await call(mercadopago, { items: [{ id: "lonier-skin-serum", qty: 3 }], customer });
+test("Mercado Pago: crea la preferencia, guarda el pedido pendiente y manda la URL de avisos", async () => {
+  const { status, data } = await call(mercadopago, { items: [{ id: "lonier-skin-serum", qty: 2 }], customer });
   assert.equal(status, 200);
   assert.equal(data.url, "https://mp.test/pay");
 
-  const sent = JSON.parse(requests[0].init.body);
-  assert.equal(requests[0].init.headers.Authorization, "Bearer TEST-token");
-  assert.deepEqual(
-    sent.items.map((i) => [i.id, i.quantity, i.unit_price, i.currency_id]),
-    [["lonier-skin-serum", 3, 299, "MXN"]]
-  );
+  const pref = external().find((r) => r.url.includes("preferences"));
+  const sent = JSON.parse(pref.init.body);
+  assert.equal(pref.init.headers.Authorization, "Bearer TEST-token");
+  assert.deepEqual(sent.items.map((i) => [i.id, i.quantity, i.unit_price, i.currency_id]), [["lonier-skin-serum", 2, 299, "MXN"]]);
   assert.equal(sent.shipments.cost, 99);
   assert.equal(sent.external_reference, data.orderId);
-  assert.match(sent.back_urls.success, /^https:\/\/tienda\.test\/gracias\?provider=mercadopago&order=LON-/);
+  assert.equal(sent.metadata.order_id, data.orderId);
+  assert.equal(sent.notification_url, "https://tienda.test/api/webhooks/mercadopago?source_news=webhooks");
+  assert.match(sent.back_urls.success, /^https:\/\/tienda\.test\/gracias\?provider=mercadopago&order=LON-.*&total=697$/);
+
+  const saved = JSON.parse(services.store.get(`order:${data.orderId}`));
+  assert.equal(saved.status, "pendiente");
+  assert.equal(saved.total, 697);
+  assert.equal(saved.customer.email, "ana@example.com");
 });
 
-test("Stripe: crea la sesión en centavos MXN con envío fijo", async () => {
+test("Stripe: crea la sesión en centavos MXN con envío fijo o gratis", async () => {
   const { status, data } = await call(stripe, { items: [{ id: "lonier-skin-serum", qty: 1 }], customer });
   assert.equal(status, 200);
   assert.equal(data.url, "https://stripe.test/pay");
-
-  const sent = requests[0].init.body;
+  let sent = external().at(-1).init.body;
   assert.equal(sent.get("line_items[0][price_data][unit_amount]"), "29900");
-  assert.equal(sent.get("line_items[0][price_data][currency]"), "mxn");
   assert.equal(sent.get("shipping_options[0][shipping_rate_data][fixed_amount][amount]"), "9900");
-  assert.equal(sent.get("customer_email"), "ana@example.com");
-  assert.equal(sent.get("metadata[order_id]"), data.orderId);
+  assert.equal(sent.get("client_reference_id"), data.orderId);
+  assert.equal(sent.get("metadata[email]"), "ana@example.com");
+
+  await call(stripe, { items: [{ id: "lonier-skin-serum", qty: 3 }], customer });
+  sent = external().at(-1).init.body;
+  assert.equal(sent.get("shipping_options[0][shipping_rate_data][fixed_amount][amount]"), "0");
+  assert.equal(sent.get("shipping_options[0][shipping_rate_data][display_name]"), "Envío gratis");
+});
+
+test("inventario: rechaza si no alcanzan las piezas y deja pasar si alcanzan", async () => {
+  services.store.set("stock:lonier-skin-serum", "2");
+  let res = await call(mercadopago, { items: [{ id: "lonier-skin-serum", qty: 3 }], customer });
+  assert.equal(res.status, 400);
+  assert.match(res.data.error, /Solo quedan 2 piezas/);
+
+  services.store.set("stock:lonier-skin-serum", "0");
+  res = await call(mercadopago, { items: [{ id: "lonier-skin-serum", qty: 1 }], customer });
+  assert.match(res.data.error, /agotado/);
+
+  services.store.set("stock:lonier-skin-serum", "5");
+  res = await call(mercadopago, { items: [{ id: "lonier-skin-serum", qty: 3 }], customer });
+  assert.equal(res.status, 200);
+});
+
+test("si la base de datos falla, la venta sigue", async () => {
+  services.failRedis = true;
+  const original = console.error;
+  console.error = () => {};
+  const { status } = await call(stripe, { items: [{ id: "lonier-skin-serum", qty: 1 }], customer });
+  console.error = original;
+  assert.equal(status, 200);
 });
 
 test("responde 503 si falta la llave y 405 si no es POST", async () => {
@@ -106,7 +130,8 @@ test("responde 503 si falta la llave y 405 si no es POST", async () => {
 });
 
 test("responde 502 si la pasarela falla", async () => {
-  globalThis.fetch = async () => new Response(JSON.stringify({ message: "invalid token" }), { status: 401 });
+  globalThis.fetch = async (url, init) =>
+    String(url).startsWith(REDIS_URL) ? services.fetch(url, init) : Response.json({ message: "invalid token" }, { status: 401 });
   const original = console.error;
   console.error = () => {};
   const { status } = await call(mercadopago, { items: [{ id: "lonier-skin-serum", qty: 1 }], customer });

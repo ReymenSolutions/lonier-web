@@ -63,8 +63,9 @@ export const cart = {
       (sum, line) => sum + Math.max(0, (line.product.compareAtPrice || 0) - line.product.price) * line.qty,
       0
     );
-    const shipping = shippingFor(subtotal);
-    return { lines, subtotal, savings, shipping, total: subtotal + shipping };
+    const qty = lines.reduce((sum, line) => sum + line.qty, 0);
+    const shipping = shippingFor(qty);
+    return { lines, qty, subtotal, savings, shipping, total: subtotal + shipping };
   },
 };
 

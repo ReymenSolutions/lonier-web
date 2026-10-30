@@ -110,6 +110,8 @@
             <span class="discount-badge" data-discount>-14%</span>
           </div>
 
+          <p class="stock-note" data-stock-note="lonier-skin-serum" hidden></p>
+
           <div class="feature-list">
             <div>Textura ligera y elegante</div>
             <div>Ideal para rutina diaria</div>
@@ -222,7 +224,7 @@
       <div class="faq">
         <details>
           <summary>¿Cuánto cuesta el envío y cuánto tarda?</summary>
-          <p id="faqShipping">El envío estándar a todo México cuesta $99 MXN y tarda de 3 a 7 días hábiles.</p>
+          <p id="faqShipping">Envío estándar a todo México (3 a 7 días hábiles): $99 MXN, gratis comprando 3 piezas o más.</p>
         </details>
         <details>
           <summary>¿Qué formas de pago aceptan?</summary>
@@ -268,15 +270,13 @@
   <div id="site-footer"></div>
 
   <script type="module">
-    import { STORE, getProduct, formatMXN } from "/js/store.js";
+    import { STORE, getProduct, shippingSummary } from "/js/store.js";
     import { initLayout, addToCartAndOpen, bindPrices } from "/js/layout.js";
 
     initLayout();
     bindPrices(getProduct("lonier-skin-serum"));
 
-    const { fee, freeOver, label } = STORE.shipping;
-    document.getElementById("faqShipping").textContent =
-      `${label}: ${formatMXN(fee)}` + (freeOver != null ? `, gratis en compras desde ${formatMXN(freeOver)}.` : ".");
+    document.getElementById("faqShipping").textContent = `${shippingSummary()}.`;
 
     let quantity = 1;
     const qtyEl = document.getElementById("qty");

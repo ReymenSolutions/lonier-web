@@ -1,27 +1,21 @@
 // Crea una sesión de Stripe Checkout y devuelve la URL de pago.
 // https://docs.stripe.com/api/checkout/sessions/create
-import { checkoutHandler, formatAddress } from "../_lib/order.js";
+import { checkoutHandler } from "../_lib/order.js";
+import { paymentMetadata } from "../_lib/fulfill.js";
 import { STORE } from "../../js/store.js";
 
 export default checkoutHandler({
   provider: "Stripe",
   envVar: "STRIPE_SECRET_KEY",
   async createCheckout({ order, secret, baseUrl }) {
-    const { customer: c } = order;
-    const metadata = {
-      order_id: order.orderId,
-      customer_name: `${c.firstName} ${c.lastName}`,
-      phone: c.phone,
-      shipping_address: formatAddress(c),
-      notes: c.notes || "",
-    };
+    const metadata = paymentMetadata(order);
 
     const params = new URLSearchParams({
       mode: "payment",
       locale: "es-419",
       client_reference_id: order.orderId,
-      customer_email: c.email,
-      success_url: `${baseUrl}/gracias?provider=stripe&status=approved&order=${order.orderId}`,
+      customer_email: order.customer.email,
+      success_url: `${baseUrl}/gracias?provider=stripe&status=approved&order=${order.orderId}&total=${order.total}`,
       cancel_url: `${baseUrl}/carrito?cancelado=1`,
       "shipping_options[0][shipping_rate_data][type]": "fixed_amount",
       "shipping_options[0][shipping_rate_data][display_name]": order.shipping ? STORE.shipping.label : "Envío gratis",

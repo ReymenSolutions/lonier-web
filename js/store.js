@@ -11,11 +11,20 @@ export const STORE = {
   mercadoLibreUrl: "",
   shipping: {
     fee: 99,
-    // Monto a partir del cual el envío es gratis. Usa null para cobrar siempre la tarifa fija.
-    freeOver: null,
+    // Número de piezas a partir del cual el envío es gratis. Usa null para cobrar siempre la tarifa fija.
+    freeFromQty: 3,
     label: "Envío estándar a todo México (3 a 7 días hábiles)",
   },
   maxQtyPerItem: 10,
+  // Se muestra "¡Quedan pocas piezas!" cuando el inventario es igual o menor a este número,
+  // y te llega una alerta por correo al vender.
+  lowStockThreshold: 5,
+  analytics: {
+    // Meta (Facebook/Instagram) → Administrador de eventos → Conjuntos de datos → ID del píxel (solo números).
+    metaPixelId: "",
+    // Google Analytics → Administrar → Flujos de datos → ID de medición (empieza con "G-").
+    ga4Id: "",
+  },
 };
 
 export const PLACEHOLDER_IMAGE = "/assets/serum-placeholder.svg";
@@ -52,11 +61,27 @@ export function getProduct(id) {
   return PRODUCTS.find((p) => p.id === id && p.active) || null;
 }
 
-export function shippingFor(subtotal) {
-  if (subtotal <= 0) return 0;
-  const { fee, freeOver } = STORE.shipping;
-  if (freeOver != null && subtotal >= freeOver) return 0;
+export function shippingFor(totalQty) {
+  if (totalQty <= 0) return 0;
+  const { fee, freeFromQty } = STORE.shipping;
+  if (freeFromQty != null && totalQty >= freeFromQty) return 0;
   return fee;
+}
+
+// Texto para animar a completar el envío gratis, según cuántas piezas lleva el cliente.
+export function freeShippingMessage(totalQty) {
+  const { freeFromQty } = STORE.shipping;
+  if (freeFromQty == null) return "";
+  if (totalQty >= freeFromQty) return "¡Tu envío es gratis!";
+  const missing = freeFromQty - totalQty;
+  return totalQty === 0
+    ? `Envío gratis comprando ${freeFromQty} piezas o más.`
+    : `Agrega ${missing} ${missing === 1 ? "pieza" : "piezas"} más y tu envío es gratis.`;
+}
+
+export function shippingSummary() {
+  const { fee, freeFromQty, label } = STORE.shipping;
+  return `${label}: ${formatMXN(fee)}` + (freeFromQty != null ? `, gratis comprando ${freeFromQty} piezas o más` : "");
 }
 
 export function discountPercent(product) {

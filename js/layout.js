@@ -1,6 +1,8 @@
 // Encabezado, pie de página, carrito lateral y botón de WhatsApp compartidos por todas las páginas.
-import { STORE, PLACEHOLDER_IMAGE, discountPercent, formatMXN } from "./store.js";
+import { STORE, PLACEHOLDER_IMAGE, discountPercent, formatMXN, freeShippingMessage, getProduct } from "./store.js";
 import { cart } from "./cart.js";
+import { applyStock } from "./stock.js";
+import { initAnalytics, trackAddToCart } from "./analytics.js";
 
 export function imgFallback(img) {
   const swap = () => {
@@ -15,7 +17,13 @@ export function whatsappUrl(message) {
   return `https://wa.me/${STORE.whatsapp}?text=${encodeURIComponent(message)}`;
 }
 
+const announcement =
+  STORE.shipping.freeFromQty != null
+    ? `<div class="announcement">🚚 Envío <strong>GRATIS</strong> comprando ${STORE.shipping.freeFromQty} piezas o más</div>`
+    : "";
+
 const header = `
+  ${announcement}
   <nav class="nav">
     <div class="container nav-inner">
       <a href="/" class="brand">Lonier <span>Skin</span></a>
@@ -89,17 +97,12 @@ export function closeCart() {
 }
 
 function renderDrawer() {
-  const { lines, subtotal } = cart.totals();
-  document.getElementById("cartCount").textContent = cart.count();
+  const { lines, qty, subtotal } = cart.totals();
+  document.getElementById("cartCount").textContent = qty;
   document.getElementById("drawerSubtotal").textContent = formatMXN(subtotal);
-
-  const { fee, freeOver } = STORE.shipping;
   document.getElementById("drawerShippingNote").textContent =
-    freeOver != null && subtotal < freeOver
-      ? `Te faltan ${formatMXN(freeOver - subtotal)} para envío gratis.`
-      : freeOver != null
-        ? "¡Tu envío es gratis!"
-        : `Envío: ${formatMXN(fee)}. Se calcula al pagar.`;
+    freeShippingMessage(qty) || `Envío: ${formatMXN(STORE.shipping.fee)}.`;
+  document.querySelectorAll("[data-free-shipping]").forEach((el) => (el.textContent = freeShippingMessage(qty)));
 
   const body = document.getElementById("cartBody");
   if (lines.length === 0) {
@@ -127,6 +130,7 @@ function renderDrawer() {
 }
 
 export function initLayout() {
+  initAnalytics();
   document.getElementById("site-header").innerHTML = header;
   document.getElementById("site-footer").innerHTML = footer;
   document.body.insertAdjacentHTML("afterbegin", drawer);
@@ -146,10 +150,17 @@ export function initLayout() {
   document.querySelectorAll("img").forEach(imgFallback);
   window.addEventListener("cart:change", renderDrawer);
   renderDrawer();
+  applyStock();
+}
+
+export function addToCart(id, qty = 1) {
+  cart.add(id, qty);
+  const product = getProduct(id);
+  if (product) trackAddToCart(product, qty);
 }
 
 export function addToCartAndOpen(id, qty = 1) {
-  cart.add(id, qty);
+  addToCart(id, qty);
   openCart();
 }
 

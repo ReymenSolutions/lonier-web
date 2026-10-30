@@ -1,6 +1,7 @@
 // Validación del pedido y cálculo de totales del lado del servidor.
 // Los precios salen del catálogo (js/store.js); del navegador solo se aceptan id y cantidad.
 import { STORE, getProduct, shippingFor } from "../../js/store.js";
+import { getStock, savePendingOrder } from "./orders.js";
 
 export class OrderError extends Error {}
 
@@ -57,13 +58,28 @@ export function buildOrder(body) {
   const lines = parseItems(body?.items);
   const customer = parseCustomer(body?.customer);
   const subtotal = lines.reduce((sum, line) => sum + line.lineTotal, 0);
-  const shipping = shippingFor(subtotal);
+  const shipping = shippingFor(lines.reduce((sum, line) => sum + line.qty, 0));
   const orderId = `LON-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).slice(2, 6).toUpperCase()}`;
   return { orderId, lines, customer, subtotal, shipping, total: subtotal + shipping };
 }
 
-export function formatAddress(c) {
-  return [c.street, `Col. ${c.neighborhood}`, `C.P. ${c.zip}`, c.city, c.state].join(", ");
+async function checkStock(order) {
+  let stock;
+  try {
+    stock = await getStock();
+  } catch (error) {
+    console.error("[inventario]", error.message);
+    return;
+  }
+  for (const { product, qty } of order.lines) {
+    const available = stock[product.id];
+    if (available == null || qty <= available) continue;
+    throw new OrderError(
+      available <= 0
+        ? `${product.name} está agotado por el momento.`
+        : `Solo quedan ${available} piezas de ${product.name}. Ajusta la cantidad en tu carrito.`
+    );
+  }
 }
 
 export function siteUrl(req) {
@@ -98,9 +114,17 @@ export function checkoutHandler({ provider, envVar, createCheckout }) {
     let order;
     try {
       order = buildOrder(readBody(req));
+      await checkStock(order);
     } catch (error) {
       if (error instanceof OrderError) return res.status(400).json({ error: error.message });
       throw error;
+    }
+
+    try {
+      await savePendingOrder(order, provider);
+    } catch (error) {
+      // Si la base de datos falla no detenemos la venta: el aviso de pago trae los datos en la metadata.
+      console.error(`[pedidos] ${order.orderId}:`, error.message);
     }
 
     try {
