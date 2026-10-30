@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="es-MX">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lonier Skin Serum | Lonier Skin</title>
+  <meta name="description" content="Lonier Skin Serum, serum facial premium. Ahora $299 MXN (antes $349). Envío a todo México." />
+  <meta property="og:type" content="product" />
+  <meta property="og:title" content="Lonier Skin Serum" />
+  <meta property="og:image" content="/assets/serum-front.png" />
+  <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="/css/styles.css" />
+</head>
+
+<body>
+  <div id="site-header"></div>
+
+  <main class="section">
+    <div class="container">
+      <nav class="breadcrumbs" aria-label="Ruta">
+        <a href="/">Inicio</a> / <a href="/tienda">Tienda</a> / <span id="crumbName"></span>
+      </nav>
+
+      <div class="pdp" id="pdp">
+        <div class="pdp-gallery">
+          <div class="product-img-box pdp-main">
+            <img id="mainImage" alt="" />
+          </div>
+          <div class="pdp-thumbs" id="thumbs"></div>
+        </div>
+
+        <div class="product-info">
+          <div class="eyebrow" id="tagline"></div>
+          <h1 class="pdp-title" id="name"></h1>
+
+          <div class="price">
+            <s class="old-price" data-compare></s> <span data-price></span> <small>MXN</small>
+            <span class="discount-badge" data-discount></span>
+          </div>
+
+          <p id="description"></p>
+
+          <div class="feature-list" id="features"></div>
+
+          <div class="qty-row">
+            <div class="qty">
+              <button type="button" data-qty="-1" aria-label="Quitar uno">−</button>
+              <span id="qty">1</span>
+              <button type="button" data-qty="1" aria-label="Agregar uno">+</button>
+            </div>
+            <button class="btn btn-gold" id="addBtn">Agregar al carrito</button>
+          </div>
+
+          <div class="pdp-secondary">
+            <button class="btn btn-primary" id="buyNow">Comprar ahora</button>
+            <a class="btn btn-ml" id="mlLink" target="_blank" rel="noopener" hidden>Comprar en Mercado Libre</a>
+          </div>
+
+          <ul class="trust-list">
+            <li id="shippingInfo"></li>
+            <li>Pago seguro con Mercado Pago o Stripe</li>
+            <li>¿Dudas? <a id="waLink" target="_blank" rel="noopener">Escríbenos por WhatsApp</a></li>
+          </ul>
+
+          <details class="pdp-details" open>
+            <summary>Cómo usar</summary>
+            <ol id="howToUse"></ol>
+          </details>
+        </div>
+      </div>
+
+      <div class="empty" id="notFound" hidden>
+        Este producto no está disponible.<br /><a class="link-arrow" href="/tienda">Ir a la tienda →</a>
+      </div>
+    </div>
+  </main>
+
+  <div id="site-footer"></div>
+
+  <script type="module">
+    import { STORE, PRODUCTS, getProduct, formatMXN } from "/js/store.js";
+    import { cart } from "/js/cart.js";
+    import { initLayout, addToCartAndOpen, bindPrices, imgFallback, whatsappUrl } from "/js/layout.js";
+
+    initLayout();
+
+    const id = new URLSearchParams(location.search).get("id") || PRODUCTS[0].id;
+    const product = getProduct(id);
+
+    if (!product) {
+      document.getElementById("pdp").hidden = true;
+      document.getElementById("notFound").hidden = false;
+    } else {
+      document.title = `${product.name} | Lonier Skin`;
+      document.getElementById("crumbName").textContent = product.name;
+      document.getElementById("tagline").textContent = product.tagline;
+      document.getElementById("name").textContent = product.name;
+      document.getElementById("description").textContent = product.description;
+      document.getElementById("features").innerHTML = product.features.map((f) => `<div>${f}</div>`).join("");
+      document.getElementById("howToUse").innerHTML = product.howToUse.map((s) => `<li>${s}</li>`).join("");
+      bindPrices(product);
+
+      const { fee, freeOver, label } = STORE.shipping;
+      document.getElementById("shippingInfo").textContent =
+        `${label}: ${formatMXN(fee)}` + (freeOver != null ? ` (gratis desde ${formatMXN(freeOver)})` : "");
+      document.getElementById("waLink").href = whatsappUrl(`Hola, tengo una pregunta sobre ${product.name}.`);
+
+      if (STORE.mercadoLibreUrl) {
+        const ml = document.getElementById("mlLink");
+        ml.href = STORE.mercadoLibreUrl;
+        ml.hidden = false;
+      }
+
+      const main = document.getElementById("mainImage");
+      imgFallback(main);
+      main.src = product.images[0];
+      main.alt = product.name;
+
+      const thumbs = document.getElementById("thumbs");
+      if (product.images.length > 1) {
+        thumbs.innerHTML = product.images
+          .map((src, i) => `<button class="pdp-thumb${i === 0 ? " active" : ""}" data-src="${src}" aria-label="Ver imagen ${i + 1}"><img src="${src}" alt="" /></button>`)
+          .join("");
+        thumbs.querySelectorAll("img").forEach(imgFallback);
+        thumbs.addEventListener("click", (event) => {
+          const btn = event.target.closest("[data-src]");
+          if (!btn) return;
+          main.src = btn.dataset.src;
+          thumbs.querySelectorAll(".pdp-thumb").forEach((t) => t.classList.toggle("active", t === btn));
+        });
+      }
+
+      let quantity = 1;
+      const qtyEl = document.getElementById("qty");
+      document.querySelectorAll("[data-qty]").forEach((btn) =>
+        btn.addEventListener("click", () => {
+          quantity = Math.max(1, Math.min(STORE.maxQtyPerItem, quantity + Number(btn.dataset.qty)));
+          qtyEl.textContent = quantity;
+        })
+      );
+
+      document.getElementById("addBtn").addEventListener("click", () => {
+        addToCartAndOpen(product.id, quantity);
+        quantity = 1;
+        qtyEl.textContent = quantity;
+      });
+
+      document.getElementById("buyNow").addEventListener("click", () => {
+        cart.add(product.id, quantity);
+        location.href = "/carrito";
+      });
+
+      const schema = {
+        "@context": "https://schema.org",
+        "@type": "Product",
+        name: product.name,
+        description: product.description,
+        image: product.images.map((src) => new URL(src, location.origin).href),
+        brand: { "@type": "Brand", name: STORE.name },
+        offers: {
+          "@type": "Offer",
+          priceCurrency: "MXN",
+          price: product.price,
+          availability: "https://schema.org/InStock",
+          url: location.href,
+        },
+      };
+      const ld = document.createElement("script");
+      ld.type = "application/ld+json";
+      ld.textContent = JSON.stringify(schema);
+      document.head.appendChild(ld);
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="es-MX">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Carrito | Lonier Skin</title>
+  <meta name="robots" content="noindex" />
+  <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="/css/styles.css" />
+</head>
+
+<body>
+  <div id="site-header"></div>
+
+  <main class="section checkout">
+    <div class="container">
+      <h1 class="page-title">Tu carrito</h1>
+
+      <div class="notice" id="cancelNotice" hidden>
+        No se completó el pago. Tu carrito sigue aquí para que lo intentes de nuevo.
+      </div>
+
+      <div class="empty" id="emptyState" hidden>
+        Tu carrito está vacío.<br />
+        <a class="btn btn-gold" href="/tienda">Ir a la tienda</a>
+      </div>
+
+      <div class="checkout-grid" id="checkoutGrid" hidden>
+        <div>
+          <div class="panel">
+            <h2>Productos</h2>
+            <div id="lines"></div>
+          </div>
+
+          <form class="panel" id="checkoutForm" novalidate>
+            <h2>Datos de envío</h2>
+            <div class="form-grid">
+              <label>Nombre<input name="firstName" autocomplete="given-name" required maxlength="60" /></label>
+              <label>Apellidos<input name="lastName" autocomplete="family-name" required maxlength="80" /></label>
+              <label>Correo electrónico<input name="email" type="email" autocomplete="email" required maxlength="120" /></label>
+              <label>Teléfono (10 dígitos)<input name="phone" type="tel" autocomplete="tel-national" required inputmode="numeric" pattern="[\d\s\-\(\)\+]{10,20}" /></label>
+              <label class="span-2">Calle y número<input name="street" autocomplete="address-line1" required maxlength="120" /></label>
+              <label>Colonia<input name="neighborhood" required maxlength="80" /></label>
+              <label>Código postal<input name="zip" autocomplete="postal-code" required inputmode="numeric" pattern="\d{5}" maxlength="5" /></label>
+              <label>Ciudad o municipio<input name="city" autocomplete="address-level2" required maxlength="80" /></label>
+              <label>Estado
+                <select name="state" autocomplete="address-level1" required>
+                  <option value="">Selecciona…</option>
+                </select>
+              </label>
+              <label class="span-2">Referencias (opcional)<input name="notes" maxlength="200" placeholder="Entre calles, color de fachada…" /></label>
+            </div>
+            <label class="check">
+              <input type="checkbox" name="accept" required />
+              <span>Acepto los <a href="/politicas#terminos" target="_blank">términos y condiciones</a> y el <a href="/politicas#privacidad" target="_blank">aviso de privacidad</a>.</span>
+            </label>
+          </form>
+        </div>
+
+        <aside class="panel summary">
+          <h2>Resumen</h2>
+          <div class="summary-row"><span>Subtotal</span><span id="sumSubtotal"></span></div>
+          <div class="summary-row savings" id="sumSavingsRow"><span>Ahorras</span><span id="sumSavings"></span></div>
+          <div class="summary-row"><span>Envío</span><span id="sumShipping"></span></div>
+          <div class="summary-row total"><span>Total</span><span id="sumTotal"></span></div>
+
+          <div class="error" id="checkoutError" role="alert" hidden></div>
+
+          <button class="btn btn-mp" data-provider="mercadopago">Pagar con Mercado Pago</button>
+          <p class="pay-hint">Tarjeta, saldo Mercado Pago, OXXO y meses sin intereses.</p>
+          <button class="btn btn-primary" data-provider="stripe">Pagar con tarjeta (Stripe)</button>
+          <p class="pay-hint">Crédito o débito Visa, Mastercard y American Express.</p>
+
+          <div class="divider"><span>o</span></div>
+          <button class="btn btn-ghost" id="whatsappOrder">Pedir por WhatsApp</button>
+          <a class="btn btn-ghost" id="mlLink" target="_blank" rel="noopener" hidden>Comprar en Mercado Libre</a>
+
+          <p class="secure-note">🔒 El pago se hace en la página segura de Mercado Pago o Stripe. Nunca vemos los datos de tu tarjeta.</p>
+        </aside>
+      </div>
+    </div>
+  </main>
+
+  <div id="site-footer"></div>
+
+  <script type="module">
+    import { STORE, formatMXN } from "/js/store.js";
+    import { cart } from "/js/cart.js";
+    import { initLayout, imgFallback, whatsappUrl } from "/js/layout.js";
+
+    initLayout();
+
+    const STATES = ["Aguascalientes", "Baja California", "Baja California Sur", "Campeche", "Chiapas", "Chihuahua",
+      "Ciudad de México", "Coahuila", "Colima", "Durango", "Estado de México", "Guanajuato", "Guerrero", "Hidalgo",
+      "Jalisco", "Michoacán", "Morelos", "Nayarit", "Nuevo León", "Oaxaca", "Puebla", "Querétaro", "Quintana Roo",
+      "San Luis Potosí", "Sinaloa", "Sonora", "Tabasco", "Tamaulipas", "Tlaxcala", "Veracruz", "Yucatán", "Zacatecas"];
+    const FORM_KEY = "lonier_checkout_form_v1";
+
+    const form = document.getElementById("checkoutForm");
+    const errorEl = document.getElementById("checkoutError");
+    const payButtons = document.querySelectorAll("[data-provider]");
+
+    form.state.insertAdjacentHTML("beforeend", STATES.map((s) => `<option>${s}</option>`).join(""));
+
+    if (new URLSearchParams(location.search).has("cancelado")) {
+      document.getElementById("cancelNotice").hidden = false;
+    }
+    if (STORE.mercadoLibreUrl) {
+      const ml = document.getElementById("mlLink");
+      ml.href = STORE.mercadoLibreUrl;
+      ml.hidden = false;
+    }
+
+    // Recordar los datos del formulario en este navegador para la próxima compra.
+    try {
+      const saved = JSON.parse(localStorage.getItem(FORM_KEY) || "{}");
+      for (const [key, value] of Object.entries(saved)) if (form[key] && key !== "accept") form[key].value = value;
+    } catch {}
+    form.addEventListener("input", () => {
+      showError("");
+      const data = Object.fromEntries(new FormData(form));
+      delete data.accept;
+      try {
+        localStorage.setItem(FORM_KEY, JSON.stringify(data));
+      } catch {}
+    });
+
+    function render() {
+      const { lines, subtotal, savings, shipping, total } = cart.totals();
+      document.getElementById("emptyState").hidden = lines.length > 0;
+      document.getElementById("checkoutGrid").hidden = lines.length === 0;
+      if (!lines.length) return;
+
+      const linesEl = document.getElementById("lines");
+      linesEl.innerHTML = lines
+        .map(
+          ({ product, qty, lineTotal }) => `
+          <div class="line">
+            <a class="line-img" href="/producto?id=${product.id}"><img src="${product.images[0]}" alt="${product.name}" /></a>
+            <div class="line-info">
+              <strong>${product.name}</strong>
+              <span>${formatMXN(product.price)} c/u ${product.compareAtPrice ? `<s>$${product.compareAtPrice}</s>` : ""}</span>
+              <button class="remove" data-remove="${product.id}">Eliminar</button>
+            </div>
+            <div class="qty">
+              <button type="button" data-id="${product.id}" data-delta="-1" aria-label="Quitar uno">−</button>
+              <span>${qty}</span>
+              <button type="button" data-id="${product.id}" data-delta="1" aria-label="Agregar uno">+</button>
+            </div>
+            <strong class="line-total">${formatMXN(lineTotal)}</strong>
+          </div>`
+        )
+        .join("");
+      linesEl.querySelectorAll("img").forEach(imgFallback);
+
+      document.getElementById("sumSubtotal").textContent = formatMXN(subtotal);
+      document.getElementById("sumSavings").textContent = `−${formatMXN(savings)}`;
+      document.getElementById("sumSavingsRow").hidden = savings === 0;
+      document.getElementById("sumShipping").textContent = shipping ? formatMXN(shipping) : "Gratis";
+      document.getElementById("sumTotal").textContent = formatMXN(total);
+    }
+
+    document.getElementById("lines").addEventListener("click", (event) => {
+      const { id, delta, remove } = event.target.dataset;
+      if (remove) cart.remove(remove);
+      if (id) {
+        const item = cart.items().find((i) => i.id === id);
+        if (item) cart.setQty(id, item.qty + Number(delta));
+      }
+    });
+
+    function showError(message) {
+      errorEl.textContent = message;
+      errorEl.hidden = !message;
+    }
+
+    function readCustomer() {
+      if (!form.checkValidity()) {
+        form.reportValidity();
+        showError("Completa tus datos de envío para continuar.");
+        return null;
+      }
+      const data = Object.fromEntries(new FormData(form));
+      delete data.accept;
+      return data;
+    }
+
+    payButtons.forEach((btn) =>
+      btn.addEventListener("click", async () => {
+        showError("");
+        const customer = readCustomer();
+        if (!customer) return;
+
+        const label = btn.textContent;
+        payButtons.forEach((b) => (b.disabled = true));
+        btn.textContent = "Redirigiendo al pago…";
+
+        try {
+          const response = await fetch(`/api/checkout/${btn.dataset.provider}`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ items: cart.items(), customer }),
+          });
+          const data = await response.json().catch(() => ({}));
+          if (!response.ok || !data.url) throw new Error(data.error || "No pudimos iniciar el pago.");
+          location.href = data.url;
+        } catch (error) {
+          showError(`${error.message} También puedes pedir por WhatsApp.`);
+          payButtons.forEach((b) => (b.disabled = false));
+          btn.textContent = label;
+        }
+      })
+    );
+
+    document.getElementById("whatsappOrder").addEventListener("click", () => {
+      const { lines, total } = cart.totals();
+      const items = lines.map(({ product, qty }) => `${qty} x ${product.name}`).join(", ");
+      window.open(whatsappUrl(`Hola, quiero comprar: ${items}. Total: ${formatMXN(total)} (incluye envío).`), "_blank");
+    });
+
+    window.addEventListener("cart:change", render);
+    render();
+  </script>
+</body>
+</html>
