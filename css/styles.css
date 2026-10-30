@@ -1714,3 +1714,163 @@ h1 {
   font-size: 18px;
   margin: 24px 0 10px;
 }
+
+/* ---------- Fotos de producto ----------
+   Las fotos tienen fondo propio: llenan su recuadro en lugar de flotar con sombra. */
+
+.product-showcase.has-photo {
+  background: #ece3d6;
+}
+
+.product-showcase.has-photo::before {
+  display: none;
+}
+
+.product-showcase.has-photo img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: none;
+  z-index: 1;
+}
+
+.product-img-box {
+  position: relative;
+  aspect-ratio: 1;
+  min-height: 0;
+  padding: 0;
+  background: #ece3d6;
+}
+
+.product-img-box img,
+.product-tile-img img,
+.cart-item-img img,
+.line-img img,
+.pdp-thumb img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  max-height: none;
+  object-fit: cover;
+  filter: none;
+}
+
+.pdp-main {
+  aspect-ratio: 4 / 5;
+}
+
+.product-tile-img,
+.cart-item-img,
+.line-img,
+.pdp-thumb {
+  position: relative;
+  overflow: hidden;
+  padding: 0;
+}
+
+.product-tile-img {
+  background: #ece3d6;
+}
+
+.tile-badge {
+  z-index: 1;
+}
+
+.cart-item-img {
+  height: 82px;
+}
+
+.pdp-thumbs {
+  flex-wrap: wrap;
+}
+
+.pdp-details + .pdp-details {
+  margin-top: 12px;
+}
+
+.pdp-details ul {
+  margin: 12px 0 0 20px;
+  color: var(--muted);
+  line-height: 1.8;
+}
+
+.pdp-ingredients {
+  list-style: none;
+  margin-left: 0 !important;
+  display: grid;
+  gap: 8px;
+  line-height: 1.6 !important;
+}
+
+.pdp-ingredients strong {
+  color: var(--text);
+  margin-right: 4px;
+}
+
+/* Ingredientes en la portada */
+
+.ingredients-split {
+  display: grid;
+  grid-template-columns: .9fr 1.1fr;
+  gap: 56px;
+  align-items: center;
+}
+
+.ingredients-photo {
+  width: 100%;
+  border-radius: 36px;
+  box-shadow: var(--shadow);
+}
+
+.section-head.left {
+  text-align: left;
+  margin-bottom: 28px;
+}
+
+.section-head.left p {
+  margin: 0;
+}
+
+.ingredient-list {
+  list-style: none;
+  display: grid;
+  gap: 12px;
+}
+
+.ingredient-list li {
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 18px 22px;
+  display: grid;
+  gap: 4px;
+}
+
+.ingredient-list strong {
+  font-size: 17px;
+}
+
+.ingredient-list span {
+  color: var(--muted);
+  line-height: 1.55;
+  font-size: 15px;
+}
+
+@media (max-width: 900px) {
+  .ingredients-split {
+    grid-template-columns: 1fr;
+    gap: 32px;
+  }
+
+  .ingredients-photo {
+    max-height: 520px;
+    object-fit: cover;
+  }
+
+  .product-img-box {
+    min-height: 0;
+  }
+}

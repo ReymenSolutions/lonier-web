@@ -29,7 +29,7 @@ const header = `
       <a href="/" class="brand">Lonier <span>Skin</span></a>
       <div class="nav-links">
         <a href="/tienda">Tienda</a>
-        <a href="/#beneficios">Beneficios</a>
+        <a href="/#ingredientes">Ingredientes</a>
         <a href="/#como-usar">Cómo usar</a>
         <a href="/#preguntas">Preguntas</a>
       </div>

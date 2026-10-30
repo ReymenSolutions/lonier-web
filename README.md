@@ -41,7 +41,7 @@ Los avisos repetidos de la pasarela no duplican el pedido ni descuentan inventar
 - **Envío:** `STORE.shipping.fee` (hoy $99) y `freeFromQty` (hoy 3 piezas; usa `null` para quitar el envío gratis).
 - **Inventario:** desde `/admin`. Cuando vendas en Mercado Libre, resta las piezas ahí.
 - **Botón de Mercado Libre:** `STORE.mercadoLibreUrl`.
-- **Fotos:** `assets/serum-front.png` y `assets/serum-single.png`. Mientras no existan se muestra `assets/serum-placeholder.svg`.
+- **Fotos:** van en `assets/` en formato WebP y se listan en `images` del producto en `js/store.js`; la primera es la principal. `assets/og-image.jpg` (1200×630) es la imagen que aparece al compartir el enlace en WhatsApp o Facebook. Si una foto no carga se muestra `assets/serum-placeholder.svg`.
 
 ## Publicar en Vercel (paso a paso)
 

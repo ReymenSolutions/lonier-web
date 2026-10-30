@@ -4,11 +4,13 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Lonier Skin Serum | Lonier Skin</title>
-  <meta name="description" content="Lonier Skin Serum, serum facial premium. Ahora $299 MXN (antes $349). Envío a todo México." />
+  <meta name="description" content="Lonier Skin Serum con vitamina C, ácido hialurónico y niacinamida 3.5%. Ahora $299 MXN (antes $349). Envío gratis comprando 3 piezas." />
   <meta property="og:type" content="product" />
   <meta property="og:title" content="Lonier Skin Serum" />
-  <meta property="og:image" content="/assets/serum-front.png" />
+  <meta property="og:image" content="https://www.lonierskin.com/assets/og-image.jpg" />
+  <meta name="twitter:card" content="summary_large_image" />
   <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png" />
   <link rel="stylesheet" href="/css/styles.css" />
 </head>
 
@@ -67,8 +69,18 @@
           </ul>
 
           <details class="pdp-details" open>
+            <summary>Ingredientes principales</summary>
+            <ul class="pdp-ingredients" id="ingredients"></ul>
+          </details>
+
+          <details class="pdp-details">
             <summary>Cómo usar</summary>
             <ol id="howToUse"></ol>
+          </details>
+
+          <details class="pdp-details">
+            <summary>Precauciones</summary>
+            <ul id="precautions"></ul>
           </details>
         </div>
       </div>
@@ -103,6 +115,10 @@
       document.getElementById("description").textContent = product.description;
       document.getElementById("features").innerHTML = product.features.map((f) => `<div>${f}</div>`).join("");
       document.getElementById("howToUse").innerHTML = product.howToUse.map((s) => `<li>${s}</li>`).join("");
+      document.getElementById("ingredients").innerHTML = (product.ingredients || [])
+        .map((i) => `<li><strong>${i.name}</strong> ${i.benefit}</li>`)
+        .join("");
+      document.getElementById("precautions").innerHTML = (product.precautions || []).map((s) => `<li>${s}</li>`).join("");
       bindPrices(product);
 
       document.getElementById("shippingInfo").textContent = shippingSummary();
