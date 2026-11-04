@@ -114,3 +114,15 @@ test("redirige www al dominio principal si hay CANONICAL_HOST", async () => {
     delete process.env.CANONICAL_HOST;
   }
 });
+
+test("CSS y JS se revalidan siempre (no se quedan viejos en caché) y responden 304 si no cambiaron", async () => {
+  for (const path of ["/css/styles.css", "/js/layout.js", "/"]) {
+    const first = await get(path);
+    assert.equal(first.headers.get("cache-control"), "no-cache", path);
+    const etag = first.headers.get("etag");
+    assert.ok(etag, path);
+    const again = await get(path, { headers: { "if-none-match": etag } });
+    assert.equal(again.status, 304, path);
+  }
+  assert.match((await get("/assets/serum-caja.webp")).headers.get("cache-control"), /max-age=604800/);
+});

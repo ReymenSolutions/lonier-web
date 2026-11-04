@@ -38,8 +38,10 @@ async function serveStatic(req, res, pathname) {
   if (!PUBLIC_FILE.test(file) || file.includes("..")) return notFound(res);
 
   const fullPath = path.join(ROOT, file);
+  let info;
   try {
-    if (!(await stat(fullPath)).isFile()) return notFound(res);
+    info = await stat(fullPath);
+    if (!info.isFile()) return notFound(res);
   } catch {
     return notFound(res);
   }
@@ -52,11 +54,21 @@ async function serveStatic(req, res, pathname) {
     return res.end();
   }
 
+  // Páginas, estilos y scripts: el navegador siempre pregunta si cambiaron (si no, responde 304 sin reenviar).
+  // Así una actualización nunca mezcla un HTML nuevo con un JS o CSS viejo guardado en caché.
+  // Las imágenes sí se guardan una semana.
   const ext = path.extname(file);
-  res.writeHead(200, {
+  const etag = `"${info.size.toString(36)}-${Math.floor(info.mtimeMs).toString(36)}"`;
+  const headers = {
     "Content-Type": TYPES[ext] || "application/octet-stream",
-    "Cache-Control": ext === ".html" ? "no-cache" : "public, max-age=86400",
-  });
+    "Cache-Control": [".html", ".css", ".js", ".txt", ".xml"].includes(ext) ? "no-cache" : "public, max-age=604800",
+    ETag: etag,
+  };
+  if (req.headers["if-none-match"] === etag) {
+    res.writeHead(304, headers);
+    return res.end();
+  }
+  res.writeHead(200, headers);
   if (req.method === "HEAD") return res.end();
   res.end(await readFile(fullPath));
 }
