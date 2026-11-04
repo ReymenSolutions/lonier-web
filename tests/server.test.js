@@ -1,5 +1,6 @@
 import { test, before, after } from "node:test";
 import assert from "node:assert/strict";
+import http from "node:http";
 import { createServer } from "../server.js";
 
 let server, base;
@@ -90,4 +91,26 @@ test("ejecuta las funciones de /api en ambos estilos", async () => {
 test("rechaza cuerpos demasiado grandes", async () => {
   const res = await get("/api/webhooks/stripe", { method: "POST", body: "x".repeat(2 * 1024 * 1024) }).catch(() => ({ status: 413 }));
   assert.equal(res.status, 413);
+});
+
+function requestWithHost(path, host) {
+  return new Promise((resolve, reject) => {
+    const { port } = server.address();
+    http.get({ host: "127.0.0.1", port, path, headers: { host } }, (res) => {
+      res.resume();
+      resolve({ status: res.statusCode, location: res.headers.location });
+    }).on("error", reject);
+  });
+}
+
+test("redirige www al dominio principal si hay CANONICAL_HOST", async () => {
+  process.env.CANONICAL_HOST = "lonier.mx";
+  try {
+    const www = await requestWithHost("/producto?id=x", "www.lonier.mx");
+    assert.equal(www.status, 301);
+    assert.equal(www.location, "https://lonier.mx/producto?id=x");
+    assert.equal((await requestWithHost("/", "lonier.mx")).status, 200);
+  } finally {
+    delete process.env.CANONICAL_HOST;
+  }
 });

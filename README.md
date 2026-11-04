@@ -90,6 +90,56 @@ Cópiala en GitHub: **repositorio → Settings → Deploy keys → Add deploy ke
 
 ### 3. Instalar
 
+Elige según lo que ya tenga tu VPS. Para saberlo:
+
+```bash
+docker ps --format '{{.Names}}  {{.Image}}' | grep -i proxy
+```
+
+#### Opción A: VPS con Docker y nginx-proxy (si el comando de arriba muestra `nginxproxy/nginx-proxy`)
+
+La tienda corre como un contenedor más. nginx-proxy la publica en `lonier.mx` y `www.lonier.mx`, y acme-companion saca el HTTPS solo. No se toca ningún otro sitio del servidor.
+
+Primero, averigua en qué red de Docker está nginx-proxy:
+
+```bash
+docker inspect nginx-proxy -f '{{range $name, $_ := .NetworkSettings.Networks}}{{println $name}}{{end}}'
+```
+
+Luego, como root (cambia `NOMBRE-DE-LA-RED` por lo que respondió el comando anterior):
+
+```bash
+cd /srv/lonier-web && cp -n .env.example .env && chmod 600 .env
+```
+
+```bash
+PROXY_NETWORK=NOMBRE-DE-LA-RED docker compose up -d --build
+```
+
+Para no escribir la red cada vez, guárdala en un archivo que docker compose lee solo:
+
+```bash
+echo "PROXY_NETWORK=NOMBRE-DE-LA-RED" >> /srv/lonier-web/.env
+```
+
+Revisa que arrancó y que acme-companion pidió el certificado (tarda 1 o 2 minutos después de que el DNS apunte al VPS):
+
+```bash
+docker logs -f lonier-web
+```
+
+```bash
+docker logs acme-companion 2>&1 | grep -i lonier
+```
+
+Para publicar cambios nuevos:
+
+```bash
+cd /srv/lonier-web && git pull && docker compose up -d --build
+```
+
+#### Opción B: VPS sin Docker
+
 En el VPS, como root (cambia el correo; se usa para avisos de Let's Encrypt):
 
 ```bash
@@ -100,21 +150,16 @@ git clone git@github.com:ReymenSolutions/lonier-web.git /srv/lonier-web
 EMAIL=tu@correo.com bash /srv/lonier-web/deploy/setup.sh
 ```
 
-El script instala Node 22, nginx y certbot. Además crea el servicio `lonier`, configura nginx para `lonier.mx` (y redirige `www.lonier.mx` a `lonier.mx`) y pide el certificado HTTPS. Si el DNS todavía no apunta al VPS, deja todo listo sin HTTPS: vuelve a correrlo cuando el DNS esté listo.
+El script instala Node 22, nginx y certbot. Además crea el servicio `lonier`, configura nginx para `lonier.mx` (y redirige `www.lonier.mx` a `lonier.mx`) y pide el certificado HTTPS. Si el DNS todavía no apunta al VPS, deja todo listo sin HTTPS: vuelve a correrlo cuando el DNS esté listo. **No lo uses si los puertos 80 y 443 ya los ocupa Docker u otro servidor web.**
 
-Variables opcionales: `BRANCH` (rama a publicar, por defecto `main`) y `APP_PORT` (puerto interno, por defecto `3100`; cámbialo si ya lo usa otra app de tu VPS). El script no modifica otros sitios que tengas en nginx.
+Variables opcionales: `BRANCH` (rama a publicar, por defecto `main`) y `APP_PORT` (puerto interno, por defecto `3100`). El script no modifica otros sitios que tengas en nginx.
 
 ### 4. Llaves y servicios
 
-Edita `/etc/lonier/lonier.env` (todas las variables están explicadas ahí) y luego reinicia:
+Las llaves van en un archivo (todas las variables están explicadas ahí):
 
-```bash
-nano /etc/lonier/lonier.env
-```
-
-```bash
-systemctl restart lonier
-```
+- **Opción A (Docker):** `nano /srv/lonier-web/.env` y luego `cd /srv/lonier-web && docker compose up -d`.
+- **Opción B (sin Docker):** `nano /etc/lonier/lonier.env` y luego `systemctl restart lonier`.
 
 1. **Base de datos:** crea una base Redis gratis en [upstash.com](https://upstash.com) y copia `UPSTASH_REDIS_REST_URL` y `UPSTASH_REDIS_REST_TOKEN` de la pestaña *REST API*.
 2. **Correos:** crea una cuenta en [resend.com](https://resend.com) y llena `RESEND_API_KEY` y `ORDER_EMAIL_TO` (tu correo). Para escribirles también a tus clientes, en Resend **Domains → Add domain → lonier.mx**: Resend te da unos registros (MX y TXT de `send` y `resend._domainkey`) que agregas en el DNS de GoDaddy igual que arriba. Cuando aparezca "Verified", pon `EMAIL_FROM="Lonier Skin <pedidos@lonier.mx>"`.
@@ -128,7 +173,7 @@ systemctl restart lonier
    Se registran estos eventos: vista de página, vista de producto (`ViewContent` / `view_item`), agregar al carrito (`AddToCart` / `add_to_cart`), inicio de pago (`InitiateCheckout` / `begin_checkout`) y compra (`Purchase` / `purchase`, una sola vez por pedido).
 7. **Prueba todo** con credenciales de prueba (`TEST-…`, `sk_test_…`) y luego cámbialas por las de producción.
 
-### Día a día en el VPS
+### Día a día en el VPS (opción B; con Docker usa `docker logs -f lonier-web` y `docker compose up -d --build`)
 
 | Para | Comando |
 | --- | --- |

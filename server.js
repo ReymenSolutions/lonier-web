@@ -146,8 +146,19 @@ function sendJson(res, status, data) {
   res.end(JSON.stringify(data));
 }
 
+// Con CANONICAL_HOST=lonier.mx, las visitas a www.lonier.mx se redirigen a lonier.mx.
+function redirectToCanonical(req, res) {
+  const canonical = process.env.CANONICAL_HOST;
+  const host = (req.headers.host || "").split(":")[0].toLowerCase();
+  if (!canonical || host !== `www.${canonical}`) return false;
+  res.writeHead(301, { Location: `https://${canonical}${req.url}` });
+  res.end();
+  return true;
+}
+
 export function createServer() {
   return http.createServer(async (req, res) => {
+    if (redirectToCanonical(req, res)) return;
     const { pathname } = new URL(req.url, "http://localhost");
     try {
       const api = pathname.match(API_ROUTE);
