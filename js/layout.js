@@ -65,13 +65,16 @@ const header = `
   ${announcement}
   <nav class="nav">
     <div class="container nav-inner">
-      <a href="/" class="brand">Lonier <span>Skin</span></a>
       <div class="nav-links">
         <a href="/tienda">Tienda</a>
         <a href="/#ingredientes">Ingredientes</a>
         <a href="/#como-usar">Cómo usar</a>
         <a href="/#preguntas">Preguntas</a>
       </div>
+      <a href="/" class="brand" data-home aria-label="Lonier Skin, ir al inicio">
+        <img class="brand-logo" src="/assets/logo-160.webp" alt="" width="52" height="52" />
+        <span class="brand-text">Lonier <span>Skin</span></span>
+      </a>
       <div class="nav-actions">
         <a class="btn btn-primary" href="/producto?id=lonier-skin-serum">Comprar ahora</a>
         <button class="cart-btn" id="openCart" aria-label="Abrir carrito">
@@ -192,6 +195,16 @@ export function initLayout() {
     if (event.key === "Escape") closeCart();
   });
   bindCartControls(document.getElementById("cartBody"));
+
+  // Logo y nombre: en la portada suben hasta arriba sin recargar; en otras páginas llevan al inicio.
+  document.querySelectorAll("[data-home]").forEach((link) =>
+    link.addEventListener("click", (event) => {
+      if (location.pathname !== "/") return;
+      event.preventDefault();
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      if (location.hash) history.replaceState(null, "", "/");
+    })
+  );
 
   renderIcons();
   document.querySelectorAll("img").forEach(imgFallback);
