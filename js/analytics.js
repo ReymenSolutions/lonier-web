@@ -1,5 +1,5 @@
 // Meta Pixel y Google Analytics 4. Solo se cargan si pusiste sus IDs en js/store.js (STORE.analytics).
-import { STORE } from "./store.js";
+import { STORE, lineTotalFor } from "./store.js";
 
 const { metaPixelId, ga4Id } = STORE.analytics;
 const CURRENCY = "MXN";
@@ -39,7 +39,12 @@ function send({ ga, meta, gaParams, metaParams, eventId }) {
   window.fbq?.("track", meta, metaParams, eventId ? { eventID: eventId } : undefined);
 }
 
-const gaItem = (product, qty = 1) => ({ item_id: product.id, item_name: product.name, price: product.price, quantity: qty });
+const gaItem = (product, qty = 1) => ({
+  item_id: product.id,
+  item_name: product.name,
+  price: Math.round((lineTotalFor(product, qty) / qty) * 100) / 100,
+  quantity: qty,
+});
 
 export function trackViewItem(product) {
   send({
@@ -54,8 +59,8 @@ export function trackAddToCart(product, qty) {
   send({
     ga: "add_to_cart",
     meta: "AddToCart",
-    gaParams: { currency: CURRENCY, value: product.price * qty, items: [gaItem(product, qty)] },
-    metaParams: { content_ids: [product.id], content_type: "product", value: product.price * qty, currency: CURRENCY },
+    gaParams: { currency: CURRENCY, value: lineTotalFor(product, qty), items: [gaItem(product, qty)] },
+    metaParams: { content_ids: [product.id], content_type: "product", value: lineTotalFor(product, qty), currency: CURRENCY },
   });
 }
 

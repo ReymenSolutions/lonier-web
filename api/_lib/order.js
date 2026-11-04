@@ -1,6 +1,6 @@
 // Validación del pedido y cálculo de totales del lado del servidor.
 // Los precios salen del catálogo (js/store.js); del navegador solo se aceptan id y cantidad.
-import { STORE, getProduct, shippingFor } from "../../js/store.js";
+import { STORE, bundleBreakdown, getProduct, lineTotalFor, shippingFor } from "../../js/store.js";
 import { getStock, savePendingOrder } from "./orders.js";
 
 export class OrderError extends Error {}
@@ -46,11 +46,26 @@ function parseItems(input) {
     if (!Number.isInteger(qty) || qty < 1) throw new OrderError("Cantidad inválida.");
     byId.set(product.id, { product, qty: Math.min(STORE.maxQtyPerItem, (byId.get(product.id)?.qty || 0) + qty) });
   }
-  return [...byId.values()].map(({ product, qty }) => ({
-    product,
-    qty,
-    unitPrice: product.price,
-    lineTotal: product.price * qty,
+  return [...byId.values()].map(({ product, qty }) => {
+    const lineTotal = lineTotalFor(product, qty);
+    return {
+      product,
+      qty,
+      unitPrice: Math.round((lineTotal / qty) * 100) / 100,
+      lineTotal,
+      items: paymentItems(product, qty),
+    };
+  });
+}
+
+// Conceptos que se mandan a la pasarela. Los paquetes van como un concepto con su precio exacto
+// (p. ej. "Paquete de 3 piezas" a $749), para que la suma cuadre al centavo.
+export function paymentItems(product, qty) {
+  return bundleBreakdown(product, qty).map((part) => ({
+    id: part.qty === 1 ? product.id : `${product.id}-x${part.qty}`,
+    name: part.qty === 1 ? product.name : `${product.name} · Paquete de ${part.qty} piezas`,
+    quantity: part.count,
+    unitPrice: part.price,
   }));
 }
 
@@ -58,7 +73,7 @@ export function buildOrder(body) {
   const lines = parseItems(body?.items);
   const customer = parseCustomer(body?.customer);
   const subtotal = lines.reduce((sum, line) => sum + line.lineTotal, 0);
-  const shipping = shippingFor(lines.reduce((sum, line) => sum + line.qty, 0));
+  const shipping = shippingFor(lines.reduce((sum, line) => sum + line.qty, 0), subtotal);
   const orderId = `LON-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).slice(2, 6).toUpperCase()}`;
   return { orderId, lines, customer, subtotal, shipping, total: subtotal + shipping };
 }

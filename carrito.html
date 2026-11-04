@@ -65,6 +65,7 @@
           <div class="summary-row"><span>Envío</span><span id="sumShipping"></span></div>
           <div class="summary-row total"><span>Total</span><span id="sumTotal"></span></div>
 
+          <div id="freeShippingOk"></div>
           <div class="ship-progress" id="shipProgress">
             <div class="ship-bar"><span id="shipBar"></span></div>
             <p data-free-shipping></p>
@@ -75,14 +76,18 @@
 
           <button class="btn btn-mp" data-provider="mercadopago">Pagar con Mercado Pago</button>
           <p class="pay-hint">Tarjeta, saldo Mercado Pago, OXXO y meses sin intereses.</p>
-          <button class="btn btn-primary" data-provider="stripe">Pagar con tarjeta (Stripe)</button>
+          <button class="btn btn-paypal" data-provider="paypal" aria-label="Pagar con PayPal"><span class="paypal-word"><b>Pay</b><i>Pal</i></span></button>
+          <p class="pay-hint">Con tu cuenta PayPal o con tarjeta.</p>
+          <button class="btn btn-primary" data-provider="stripe">Pagar con tarjeta</button>
           <p class="pay-hint">Crédito o débito Visa, Mastercard y American Express.</p>
 
+          <div id="payLogos"></div>
+
           <div class="divider"><span>o</span></div>
-          <button class="btn btn-ghost" id="whatsappOrder">Pedir por WhatsApp</button>
+          <button class="btn btn-whatsapp" id="whatsappOrder"><span data-icon="whatsapp" data-size="18"></span>Pedir por WhatsApp</button>
           <a class="btn btn-ghost" id="mlLink" target="_blank" rel="noopener" hidden>Comprar en Mercado Libre</a>
 
-          <p class="secure-note">🔒 El pago se hace en la página segura de Mercado Pago o Stripe. Nunca vemos los datos de tu tarjeta.</p>
+          <p class="secure-note"><span data-icon="lock" data-size="14"></span>El pago se hace en la página segura de Mercado Pago, PayPal o Stripe. Nunca vemos los datos de tu tarjeta.</p>
         </aside>
       </div>
     </div>
@@ -91,12 +96,14 @@
   <div id="site-footer"></div>
 
   <script type="module">
-    import { STORE, formatMXN } from "/js/store.js";
+    import { STORE, formatMXN, formatPrice, lineTotalFor } from "/js/store.js";
     import { trackBeginCheckout } from "/js/analytics.js";
     import { cart } from "/js/cart.js";
-    import { initLayout, addToCart, imgFallback, whatsappUrl } from "/js/layout.js";
+    import { initLayout, addToCart, bindCartControls, freeShippingBadge, imgFallback, qtyStepper, whatsappUrl } from "/js/layout.js";
+    import { paymentLogos } from "/js/icons.js";
 
     initLayout();
+    document.getElementById("payLogos").innerHTML = paymentLogos();
 
     const STATES = ["Aguascalientes", "Baja California", "Baja California Sur", "Campeche", "Chiapas", "Chihuahua",
       "Ciudad de México", "Coahuila", "Colima", "Durango", "Estado de México", "Guanajuato", "Guerrero", "Hidalgo",
@@ -142,20 +149,19 @@
       const linesEl = document.getElementById("lines");
       linesEl.innerHTML = lines
         .map(
-          ({ product, qty, lineTotal }) => `
+          ({ product, qty, lineTotal, compareAtTotal }) => `
           <div class="line">
             <a class="line-img" href="/producto?id=${product.id}"><img src="${product.images[0]}" alt="${product.name}" /></a>
             <div class="line-info">
               <strong>${product.name}</strong>
-              <span>${formatMXN(product.price)} c/u ${product.compareAtPrice ? `<s>$${product.compareAtPrice}</s>` : ""}</span>
+              <span>${qty > 1 ? `Paquete de ${qty} · ${formatPrice(Math.round((lineTotal / qty) * 100) / 100)} por frasco` : "1 frasco"}</span>
               <button class="remove" data-remove="${product.id}">Eliminar</button>
             </div>
-            <div class="qty">
-              <button type="button" data-id="${product.id}" data-delta="-1" aria-label="Quitar uno">−</button>
-              <span>${qty}</span>
-              <button type="button" data-id="${product.id}" data-delta="1" aria-label="Agregar uno">+</button>
+            ${qtyStepper(product.id, qty)}
+            <div class="line-total">
+              ${compareAtTotal > lineTotal ? `<s>${formatPrice(compareAtTotal)}</s>` : ""}
+              <strong>${formatMXN(lineTotal)}</strong>
             </div>
-            <strong class="line-total">${formatMXN(lineTotal)}</strong>
           </div>`
         )
         .join("");
@@ -165,30 +171,28 @@
       document.getElementById("sumSavings").textContent = `−${formatMXN(savings)}`;
       document.getElementById("sumSavingsRow").hidden = savings === 0;
       document.getElementById("sumShipping").textContent = shipping ? formatMXN(shipping) : "Gratis";
+      document.getElementById("sumShipping").classList.toggle("free", !shipping);
 
-      const { freeFromQty } = STORE.shipping;
+      // Envío gratis: aviso cuando ya aplica; si no, barra de progreso y atajo para completar el paquete.
+      const { freeFromQty, freeFromAmount } = STORE.shipping;
       const { qty } = cart.totals();
-      document.getElementById("shipProgress").hidden = freeFromQty == null;
-      if (freeFromQty != null) {
-        document.getElementById("shipBar").style.width = `${Math.min(100, (qty / freeFromQty) * 100)}%`;
-        const missing = freeFromQty - qty;
+      document.getElementById("freeShippingOk").innerHTML = shipping ? "" : freeShippingBadge();
+      document.getElementById("shipProgress").hidden = !shipping;
+      if (shipping) {
+        const progress = Math.max(freeFromQty ? qty / freeFromQty : 0, freeFromAmount ? subtotal / freeFromAmount : 0);
+        document.getElementById("shipBar").style.width = `${Math.min(100, progress * 100)}%`;
         const complete = document.getElementById("completeBundle");
-        complete.hidden = missing <= 0;
-        complete.textContent = `+ Agregar ${missing} ${missing === 1 ? "pieza" : "piezas"} y ahorrar ${formatMXN(STORE.shipping.fee)}`;
-        complete.dataset.id = lines[0].product.id;
+        const first = lines[0];
+        const missing = freeFromQty != null ? freeFromQty - first.qty : 0;
+        complete.hidden = !(missing > 0 && lines.length === 1);
+        complete.textContent = `Llévate ${freeFromQty} por ${formatPrice(lineTotalFor(first.product, freeFromQty))} con envío gratis`;
+        complete.dataset.id = first.product.id;
         complete.dataset.missing = missing;
       }
       document.getElementById("sumTotal").textContent = formatMXN(total);
     }
 
-    document.getElementById("lines").addEventListener("click", (event) => {
-      const { id, delta, remove } = event.target.dataset;
-      if (remove) cart.remove(remove);
-      if (id) {
-        const item = cart.items().find((i) => i.id === id);
-        if (item) cart.setQty(id, item.qty + Number(delta));
-      }
-    });
+    bindCartControls(document.getElementById("lines"));
 
     function showError(message) {
       errorEl.textContent = message;
@@ -213,7 +217,7 @@
         if (!customer) return;
         trackBeginCheckout(cart.totals());
 
-        const label = btn.textContent;
+        const label = btn.innerHTML;
         payButtons.forEach((b) => (b.disabled = true));
         btn.textContent = "Redirigiendo al pago…";
 
@@ -229,7 +233,7 @@
         } catch (error) {
           showError(`${error.message} También puedes pedir por WhatsApp.`);
           payButtons.forEach((b) => (b.disabled = false));
-          btn.textContent = label;
+          btn.innerHTML = label;
         }
       })
     );

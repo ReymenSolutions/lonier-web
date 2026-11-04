@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import mercadopago from "../api/checkout/mercadopago.js";
 import stripe from "../api/checkout/stripe.js";
 import { buildOrder } from "../api/_lib/order.js";
-import { shippingFor, freeShippingMessage } from "../js/store.js";
+import { PRODUCTS, lineTotalFor, shippingFor, freeShippingMessage } from "../js/store.js";
 import { createFakeServices, customer, callNode as call, REDIS_URL } from "./helpers.js";
 
 let services;
@@ -25,26 +25,36 @@ afterEach(() => {
 
 const external = () => services.requests.filter((r) => !r.url.startsWith(REDIS_URL));
 
-test("envío: $99 hasta 2 piezas, gratis desde 3", () => {
-  assert.equal(shippingFor(1), 99);
-  assert.equal(shippingFor(2), 99);
-  assert.equal(shippingFor(3), 0);
-  assert.equal(freeShippingMessage(1), "Agrega 2 piezas más y tu envío es gratis.");
-  assert.equal(freeShippingMessage(2), "Agrega 1 pieza más y tu envío es gratis.");
-  assert.equal(freeShippingMessage(3), "¡Tu envío es gratis!");
+test("envío: $99, gratis desde 3 piezas o desde $999", () => {
+  assert.equal(shippingFor(1, 299), 99);
+  assert.equal(shippingFor(2, 549), 99);
+  assert.equal(shippingFor(3, 749), 0);
+  assert.equal(shippingFor(1, 999), 0);
+  assert.equal(freeShippingMessage(1, 299), "Agrega 2 piezas más y tu envío es gratis.");
+  assert.equal(freeShippingMessage(2, 549), "Agrega 1 pieza más y tu envío es gratis.");
+  assert.equal(freeShippingMessage(3, 749), "¡Tu pedido tiene envío gratis!");
+});
+
+test("paquetes: 1 = $299, 2 = $549, 3 = $749 y cantidades mayores se arman con paquetes", () => {
+  const p = PRODUCTS[0];
+  assert.deepEqual([1, 2, 3, 4, 5, 6].map((n) => lineTotalFor(p, n)), [299, 549, 749, 1048, 1298, 1498]);
 });
 
 test("buildOrder usa el precio del catálogo y aplica envío gratis desde 3 piezas", () => {
   const two = buildOrder({ items: [{ id: "lonier-skin-serum", qty: 2, price: 1 }], customer });
-  assert.equal(two.lines[0].unitPrice, 299);
-  assert.equal(two.subtotal, 598);
+  assert.equal(two.lines[0].lineTotal, 549);
+  assert.equal(two.subtotal, 549);
   assert.equal(two.shipping, 99);
-  assert.equal(two.total, 697);
+  assert.equal(two.total, 648);
   assert.equal(two.customer.phone, "8112345678");
 
   const three = buildOrder({ items: [{ id: "lonier-skin-serum", qty: 3 }], customer });
   assert.equal(three.shipping, 0);
-  assert.equal(three.total, 897);
+  assert.equal(three.total, 749);
+
+  const four = buildOrder({ items: [{ id: "lonier-skin-serum", qty: 4 }], customer });
+  assert.deepEqual(four.lines[0].items.map((i) => [i.quantity, i.unitPrice]), [[1, 749], [1, 299]]);
+  assert.equal(four.total, 1048);
 });
 
 test("rechaza productos inexistentes, carrito vacío y datos incompletos", async () => {
@@ -70,16 +80,17 @@ test("Mercado Pago: crea la preferencia, guarda el pedido pendiente y manda la U
   const pref = external().find((r) => r.url.includes("preferences"));
   const sent = JSON.parse(pref.init.body);
   assert.equal(pref.init.headers.Authorization, "Bearer TEST-token");
-  assert.deepEqual(sent.items.map((i) => [i.id, i.quantity, i.unit_price, i.currency_id]), [["lonier-skin-serum", 2, 299, "MXN"]]);
+  assert.deepEqual(sent.items.map((i) => [i.id, i.quantity, i.unit_price, i.currency_id]), [["lonier-skin-serum-x2", 1, 549, "MXN"]]);
+  assert.match(sent.items[0].title, /Paquete de 2 piezas/);
   assert.equal(sent.shipments.cost, 99);
   assert.equal(sent.external_reference, data.orderId);
   assert.equal(sent.metadata.order_id, data.orderId);
   assert.equal(sent.notification_url, "https://tienda.test/api/webhooks/mercadopago?source_news=webhooks");
-  assert.match(sent.back_urls.success, /^https:\/\/tienda\.test\/gracias\?provider=mercadopago&order=LON-.*&total=697$/);
+  assert.match(sent.back_urls.success, /^https:\/\/tienda\.test\/gracias\?provider=mercadopago&order=LON-.*&total=648$/);
 
   const saved = JSON.parse(services.store.get(`order:${data.orderId}`));
   assert.equal(saved.status, "pendiente");
-  assert.equal(saved.total, 697);
+  assert.equal(saved.total, 648);
   assert.equal(saved.customer.email, "ana@example.com");
 });
 
@@ -95,6 +106,8 @@ test("Stripe: crea la sesión en centavos MXN con envío fijo o gratis", async (
 
   await call(stripe, { items: [{ id: "lonier-skin-serum", qty: 3 }], customer });
   sent = external().at(-1).init.body;
+  assert.equal(sent.get("line_items[0][price_data][unit_amount]"), "74900");
+  assert.equal(sent.get("line_items[0][quantity]"), "1");
   assert.equal(sent.get("shipping_options[0][shipping_rate_data][fixed_amount][amount]"), "0");
   assert.equal(sent.get("shipping_options[0][shipping_rate_data][display_name]"), "Envío gratis");
 });

@@ -16,7 +16,7 @@
   <main class="section">
     <div class="container narrow">
       <div class="panel result" id="result">
-        <div class="result-icon" id="icon">✓</div>
+        <div class="result-icon" id="icon"></div>
         <h1 class="page-title" id="title">¡Gracias por tu compra!</h1>
         <p id="message">Recibimos tu pedido. Te enviaremos la confirmación por correo.</p>
         <p class="order-ref" id="orderRef" hidden></p>
@@ -33,28 +33,29 @@
   <script type="module">
     import { cart } from "/js/cart.js";
     import { trackPurchase } from "/js/analytics.js";
+    import { icon } from "/js/icons.js";
     import { initLayout, whatsappUrl } from "/js/layout.js";
 
     initLayout();
 
     const params = new URLSearchParams(location.search);
     const order = params.get("order") || params.get("external_reference");
-    // Mercado Pago agrega ?status= (approved | pending | in_process | rejected | null); Stripe regresa status=approved.
+    // Mercado Pago agrega ?status= (approved | pending | in_process | rejected | null); Stripe y PayPal regresan status=approved o pending.
     const status = params.get("status") || params.get("collection_status");
 
     const states = {
       approved: {
-        icon: "✓",
+        icon: "check",
         title: "¡Gracias por tu compra!",
         message: "Recibimos tu pedido y tu pago. Te enviaremos la confirmación y el número de guía por correo.",
       },
       pending: {
-        icon: "⏳",
+        icon: "clock",
         title: "Tu pedido está pendiente de pago",
         message: "Si elegiste OXXO o transferencia, realiza el pago con la ficha que recibiste. En cuanto se acredite, preparamos tu envío.",
       },
       failed: {
-        icon: "!",
+        icon: "alert",
         title: "No se completó el pago",
         message: "No se realizó ningún cargo. Tu carrito sigue guardado para que lo intentes de nuevo con otro método.",
       },
@@ -63,7 +64,7 @@
     const kind = status === "approved" ? "approved" : ["pending", "in_process"].includes(status) ? "pending" : "failed";
     const view = states[kind];
 
-    document.getElementById("icon").textContent = view.icon;
+    document.getElementById("icon").innerHTML = icon(view.icon, { size: 32 });
     document.getElementById("icon").dataset.kind = kind;
     document.getElementById("title").textContent = view.title;
     document.getElementById("message").textContent = view.message;

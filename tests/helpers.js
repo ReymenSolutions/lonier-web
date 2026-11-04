@@ -56,12 +56,43 @@ export function createFakeServices() {
       return payment ? Response.json(payment) : Response.json({}, { status: 404 });
     }
     if (url === "https://api.stripe.com/v1/checkout/sessions") return Response.json({ url: "https://stripe.test/pay" });
+    if (url.startsWith("https://api-m.sandbox.paypal.com")) return paypal(url, init);
     if (url === "https://api.resend.com/emails") {
       services.emails.push(JSON.parse(init.body));
       return Response.json({ id: "email_1" });
     }
     throw new Error(`fetch no simulado: ${url}`);
   };
+
+  // PayPal: guarda las órdenes creadas y responde como la API real (sandbox).
+  services.paypalOrders = new Map();
+  services.paypalVerify = "SUCCESS";
+  function paypal(url, init) {
+    const path = url.replace("https://api-m.sandbox.paypal.com", "");
+    if (path === "/v1/oauth2/token") return Response.json({ access_token: "pp-token", expires_in: 3600 });
+    if (path === "/v1/notifications/verify-webhook-signature") return Response.json({ verification_status: services.paypalVerify });
+    if (path === "/v2/checkout/orders" && init.method === "POST") {
+      const body = JSON.parse(init.body);
+      const id = `PP${services.paypalOrders.size + 1}`;
+      services.paypalOrders.set(id, { id, body, captured: false });
+      return Response.json({ id, status: "PAYER_ACTION_REQUIRED", links: [{ rel: "payer-action", href: `https://paypal.test/checkoutnow?token=${id}` }] }, { status: 201 });
+    }
+    const capture = path.match(/^\/v2\/checkout\/orders\/(\w+)(\/capture)?$/);
+    if (capture) {
+      const order = services.paypalOrders.get(capture[1]);
+      if (!order) return Response.json({ name: "RESOURCE_NOT_FOUND" }, { status: 404 });
+      if (capture[2] && order.captured) return Response.json({ name: "UNPROCESSABLE_ENTITY", details: [{ issue: "ORDER_ALREADY_CAPTURED" }] }, { status: 422 });
+      if (capture[2]) order.captured = true;
+      const unit = order.body.purchase_units[0];
+      return Response.json({
+        id: order.id,
+        status: "COMPLETED",
+        payer: { name: { given_name: "Ana", surname: "López" }, email_address: "ana@example.com" },
+        purchase_units: [{ reference_id: unit.reference_id, payments: { captures: [{ id: `CAP-${order.id}`, status: services.paypalCaptureStatus || "COMPLETED", custom_id: unit.custom_id, amount: unit.amount }] } }],
+      });
+    }
+    throw new Error(`PayPal no simulado: ${path}`);
+  }
 
   return services;
 }

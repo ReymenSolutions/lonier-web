@@ -56,7 +56,7 @@ function stripeEvent(body, secret = "whsec_test", t = Math.floor(Date.now() / 10
 test("Mercado Pago: un pago aprobado marca el pedido, descuenta inventario y avisa por correo una sola vez", async () => {
   services.store.set("stock:lonier-skin-serum", "6");
   const orderId = await createOrder(2);
-  services.mpPayments["123"] = { status: "approved", external_reference: orderId, transaction_amount: 697, metadata: {} };
+  services.mpPayments["123"] = { status: "approved", external_reference: orderId, transaction_amount: 648, metadata: {} };
 
   const res = await mpWebhook.POST(mpNotification("123"));
   assert.equal(res.status, 200);
@@ -118,7 +118,7 @@ test("Mercado Pago: avisa si el monto pagado no coincide", async () => {
 
 test("Stripe: valida la firma y procesa pagos completos y de OXXO", async () => {
   const orderId = await createOrder(3);
-  const session = { id: "cs_1", client_reference_id: orderId, amount_total: 89700, payment_status: "unpaid", payment_intent: "pi_1", metadata: {} };
+  const session = { id: "cs_1", client_reference_id: orderId, amount_total: 74900, payment_status: "unpaid", payment_intent: "pi_1", metadata: {} };
 
   const forged = await stripeWebhook.POST(stripeEvent({ type: "checkout.session.completed", data: { object: session } }, "otro"));
   assert.equal(forged.status, 400);
@@ -132,7 +132,7 @@ test("Stripe: valida la firma y procesa pagos completos y de OXXO", async () => 
   assert.equal(await paid.text(), "pagado");
   const order = JSON.parse(services.store.get(`order:${orderId}`));
   assert.equal(order.provider, "Stripe");
-  assert.equal(order.total, 897);
+  assert.equal(order.total, 749);
   assert.equal(services.emails.length, 1);
 });
 

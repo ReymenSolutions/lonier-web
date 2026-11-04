@@ -16,7 +16,7 @@ Tienda de Lonier Skin hecha con HTML, CSS y JavaScript, sin frameworks. El cobro
 
 ## Cómo funciona una venta
 
-1. El cliente paga en Mercado Pago o Stripe. Al iniciar el pago se revisa que haya inventario y se guarda el pedido como *pendiente*.
+1. El cliente paga en Mercado Pago, PayPal o Stripe. Al iniciar el pago se revisa que haya inventario y se guarda el pedido como *pendiente*.
 2. La pasarela avisa a la tienda (`/api/webhooks/mercadopago` o `/api/webhooks/stripe`) cuando el pago se confirma, incluidos los pagos en OXXO, que llegan después.
 3. La tienda marca el pedido como **pagado**, descuenta el inventario y te manda un **correo** con productos, dirección, teléfono y un enlace al WhatsApp del cliente. Si el inventario queda bajo, el correo también te avisa.
 4. El pedido aparece en `/admin`. Cuando lo envías, lo marcas como enviado y escribes la guía; si configuraste `EMAIL_FROM`, al cliente le llega un correo con su guía.
@@ -30,7 +30,7 @@ Los avisos repetidos de la pasarela no duplican el pedido ni descuentan inventar
 - `js/layout.js`: encabezado, barra de envío gratis, pie de página, carrito lateral y botón de WhatsApp.
 - `js/stock.js`: muestra "Agotado" o "¡Solo quedan N piezas!".
 - `js/analytics.js`: Meta Pixel y Google Analytics 4.
-- `api/checkout/*`: crean el pago en Mercado Pago o Stripe. **El total se calcula en el servidor** con los precios del catálogo.
+- `api/checkout/*`: crean el pago en Mercado Pago, PayPal o Stripe (`paypal-return.js` captura el pago cuando el cliente regresa de PayPal). **El total se calcula en el servidor** con los precios del catálogo.
 - `api/webhooks/*`: reciben la confirmación del pago.
 - `api/admin.js`, `api/stock.js`: panel e inventario público.
 - `api/_lib/`: pedidos e inventario en Redis (`orders.js`), correos (`notify.js`) y el proceso de un pago confirmado (`fulfill.js`).
@@ -38,7 +38,9 @@ Los avisos repetidos de la pasarela no duplican el pedido ni descuentan inventar
 ## Cambios habituales
 
 - **Precio o descuento:** `price` y `compareAtPrice` en `js/store.js`.
-- **Envío:** `STORE.shipping.fee` (hoy $99) y `freeFromQty` (hoy 3 piezas; usa `null` para quitar el envío gratis).
+- **Paquetes:** `bundles` del producto (hoy 1 = $299, 2 = $549 "Más vendido", 3 = $749 "Mejor valor"; `defaultBundle` es el que aparece seleccionado). Cantidades mayores se arman con los paquetes más grandes: 4 piezas = $749 + $299.
+- **Envío:** `STORE.shipping.fee` (hoy $99). Es gratis con `freeFromQty` (hoy 3 piezas) o `freeFromAmount` (hoy $999); usa `null` para quitar cualquiera de las dos.
+- **Antes y después:** sube las fotos a `assets/resultados/` y llena la lista `RESULTS` en `js/sections.js`. Mientras esté vacía se muestran recuadros de "Próximamente".
 - **Inventario:** desde `/admin`. Cuando vendas en Mercado Libre, resta las piezas ahí.
 - **Botón de Mercado Libre:** `STORE.mercadoLibreUrl`.
 - **Fotos:** van en `assets/` en formato WebP y se listan en `images` del producto en `js/store.js`; la primera es la principal. `assets/og-image.jpg` (1200×630) es la imagen que aparece al compartir el enlace en WhatsApp o Facebook. Si una foto no carga se muestra `assets/serum-placeholder.svg`.
@@ -166,12 +168,13 @@ Las llaves van en un archivo (todas las variables están explicadas ahí):
 3. **Panel:** `ADMIN_PASSWORD` con una contraseña larga.
 4. **Mercado Pago:** `MP_ACCESS_TOKEN`. Los avisos de pago se configuran solos. Opcional: en **Tus integraciones → Webhooks**, copia la clave secreta a `MP_WEBHOOK_SECRET`.
 5. **Stripe:** `STRIPE_SECRET_KEY`. En **Developers → Webhooks → Add endpoint** usa `https://lonier.mx/api/webhooks/stripe` con los eventos `checkout.session.completed` y `checkout.session.async_payment_succeeded`, y copia el *Signing secret* a `STRIPE_WEBHOOK_SECRET`.
-6. **Medición:** pon tus IDs en `STORE.analytics` dentro de `js/store.js`:
+6. **PayPal:** en [developer.paypal.com](https://developer.paypal.com) → **Apps & Credentials**, crea una app y copia `PAYPAL_CLIENT_ID` y `PAYPAL_CLIENT_SECRET`. Usa la pestaña *Sandbox* para probar y *Live* para cobrar de verdad (con `PAYPAL_ENV=live`). En la app, **Webhooks → Add Webhook** con la URL `https://lonier.mx/api/webhooks/paypal` y los eventos `CHECKOUT.ORDER.APPROVED` y `PAYMENT.CAPTURE.COMPLETED`; copia el *Webhook ID* a `PAYPAL_WEBHOOK_ID`.
+7. **Medición:** pon tus IDs en `STORE.analytics` dentro de `js/store.js`:
    - `metaPixelId`: Meta → Administrador de eventos → tu conjunto de datos → ID (solo números).
    - `ga4Id`: Google Analytics → Administrar → Flujos de datos → ID de medición (`G-…`).
 
    Se registran estos eventos: vista de página, vista de producto (`ViewContent` / `view_item`), agregar al carrito (`AddToCart` / `add_to_cart`), inicio de pago (`InitiateCheckout` / `begin_checkout`) y compra (`Purchase` / `purchase`, una sola vez por pedido).
-7. **Prueba todo** con credenciales de prueba (`TEST-…`, `sk_test_…`) y luego cámbialas por las de producción.
+8. **Prueba todo** con credenciales de prueba (`TEST-…`, `sk_test_…`, PayPal *Sandbox*) y luego cámbialas por las de producción.
 
 ### Día a día en el VPS (opción B; con Docker usa `docker logs -f lonier-web` y `docker compose up -d --build`)
 

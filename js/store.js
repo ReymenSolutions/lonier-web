@@ -5,14 +5,15 @@
 export const STORE = {
   name: "Lonier Skin",
   currency: "MXN",
-  whatsapp: "528129992392",
-  whatsappDisplay: "+52 812 999 2392",
+  whatsapp: "528681865718",
+  whatsappDisplay: "+52 868 186 5718",
   // Pega aquí el enlace a tu publicación de Mercado Libre para mostrar el botón "Comprar en Mercado Libre".
   mercadoLibreUrl: "",
   shipping: {
     fee: 99,
-    // Número de piezas a partir del cual el envío es gratis. Usa null para cobrar siempre la tarifa fija.
+    // El envío es gratis si se cumple cualquiera de las dos. Usa null para desactivar una.
     freeFromQty: 3,
+    freeFromAmount: 999,
     label: "Envío estándar a todo México (3 a 7 días hábiles)",
   },
   maxQtyPerItem: 10,
@@ -34,8 +35,23 @@ export const PRODUCTS = [
     id: "lonier-skin-serum",
     name: "Lonier Skin Serum",
     tagline: "Cuidado facial natural · Hecho en México",
+    // Precio de 1 pieza y precio "antes" por pieza (se muestra tachado).
     price: 299,
     compareAtPrice: 349,
+    // Paquetes: precio total por N piezas. Las cantidades mayores se arman con los paquetes más grandes
+    // (4 piezas = paquete de 3 + 1 pieza).
+    bundles: [
+      { qty: 1, price: 299, perks: ["Rutina de mañana y/o noche", "Pago 100% seguro"] },
+      {
+        qty: 2,
+        price: 549,
+        badge: "Más vendido",
+        perks: ["Para ti y para regalar, o de repuesto", "Asesoría por WhatsApp"],
+        highlight: "Asesoría personalizada por WhatsApp",
+      },
+      { qty: 3, price: 749, badge: "Mejor valor", perks: ["Envío GRATIS", "El mejor precio por frasco", "Asesoría por WhatsApp"] },
+    ],
+    defaultBundle: 2,
     // La primera imagen es la principal (tienda, carrito y pagos).
     images: [
       "/assets/serum-caja.webp",
@@ -81,27 +97,66 @@ export function getProduct(id) {
   return PRODUCTS.find((p) => p.id === id && p.active) || null;
 }
 
-export function shippingFor(totalQty) {
-  if (totalQty <= 0) return 0;
-  const { fee, freeFromQty } = STORE.shipping;
-  if (freeFromQty != null && totalQty >= freeFromQty) return 0;
-  return fee;
+// Divide una cantidad en paquetes, del más grande al más chico: 5 → [paquete de 3, paquete de 2].
+// Devuelve [{ qty, price, count }] (count = cuántas veces se usa ese paquete).
+export function bundleBreakdown(product, qty) {
+  const bundles = [...(product.bundles || [{ qty: 1, price: product.price }])].sort((a, b) => b.qty - a.qty);
+  const parts = [];
+  let left = qty;
+  for (const bundle of bundles) {
+    const count = Math.floor(left / bundle.qty);
+    if (count > 0) {
+      parts.push({ qty: bundle.qty, price: bundle.price, count });
+      left -= count * bundle.qty;
+    }
+  }
+  if (left > 0) parts.push({ qty: 1, price: product.price, count: left });
+  return parts;
 }
 
-// Texto para animar a completar el envío gratis, según cuántas piezas lleva el cliente.
-export function freeShippingMessage(totalQty) {
-  const { freeFromQty } = STORE.shipping;
-  if (freeFromQty == null) return "";
-  if (totalQty >= freeFromQty) return "¡Tu envío es gratis!";
+// Precio total de N piezas aplicando los paquetes.
+export function lineTotalFor(product, qty) {
+  return bundleBreakdown(product, qty).reduce((sum, part) => sum + part.price * part.count, 0);
+}
+
+export function compareAtTotalFor(product, qty) {
+  return (product.compareAtPrice || product.price) * qty;
+}
+
+export function qualifiesForFreeShipping(totalQty, subtotal) {
+  const { freeFromQty, freeFromAmount } = STORE.shipping;
+  return (freeFromQty != null && totalQty >= freeFromQty) || (freeFromAmount != null && subtotal >= freeFromAmount);
+}
+
+export function shippingFor(totalQty, subtotal = 0) {
+  if (totalQty <= 0) return 0;
+  return qualifiesForFreeShipping(totalQty, subtotal) ? 0 : STORE.shipping.fee;
+}
+
+// Texto para animar a completar el envío gratis.
+export function freeShippingMessage(totalQty, subtotal = 0) {
+  const { freeFromQty, freeFromAmount } = STORE.shipping;
+  if (freeFromQty == null && freeFromAmount == null) return "";
+  if (totalQty > 0 && qualifiesForFreeShipping(totalQty, subtotal)) return "¡Tu pedido tiene envío gratis!";
+  if (freeFromQty == null) return `Te faltan ${formatMXN(freeFromAmount - subtotal)} para el envío gratis.`;
   const missing = freeFromQty - totalQty;
   return totalQty === 0
-    ? `Envío gratis comprando ${freeFromQty} piezas o más.`
+    ? `Envío gratis llevando ${freeFromQty} piezas.`
     : `Agrega ${missing} ${missing === 1 ? "pieza" : "piezas"} más y tu envío es gratis.`;
 }
 
+export function freeShippingRule() {
+  const { freeFromQty, freeFromAmount } = STORE.shipping;
+  const rules = [];
+  if (freeFromQty != null) rules.push(`llevando ${freeFromQty} piezas o más`);
+  if (freeFromAmount != null) rules.push(`en compras desde ${formatMXN(freeFromAmount)}`);
+  return rules.join(" o ");
+}
+
 export function shippingSummary() {
-  const { fee, freeFromQty, label } = STORE.shipping;
-  return `${label}: ${formatMXN(fee)}` + (freeFromQty != null ? `, gratis comprando ${freeFromQty} piezas o más` : "");
+  const { fee, label } = STORE.shipping;
+  const rule = freeShippingRule();
+  return `${label}: ${formatMXN(fee)}` + (rule ? `. Gratis ${rule}` : "");
 }
 
 export function discountPercent(product) {
@@ -110,5 +165,10 @@ export function discountPercent(product) {
 }
 
 export function formatMXN(amount) {
-  return `$${amount.toLocaleString("es-MX", { maximumFractionDigits: 2 })} MXN`;
+  return `${formatPrice(amount)} MXN`;
+}
+
+export function formatPrice(amount) {
+  const decimals = Number.isInteger(amount) ? 0 : 2;
+  return `$${amount.toLocaleString("es-MX", { minimumFractionDigits: decimals, maximumFractionDigits: 2 })}`;
 }

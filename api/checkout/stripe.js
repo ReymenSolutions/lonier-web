@@ -27,13 +27,15 @@ export default checkoutHandler({
       params.set(`metadata[${key}]`, value);
       params.set(`payment_intent_data[metadata][${key}]`, value);
     }
-    order.lines.forEach(({ product, qty, unitPrice }, i) => {
-      params.set(`line_items[${i}][quantity]`, String(qty));
-      params.set(`line_items[${i}][price_data][currency]`, "mxn");
-      params.set(`line_items[${i}][price_data][unit_amount]`, String(unitPrice * 100));
-      params.set(`line_items[${i}][price_data][product_data][name]`, product.name);
-      params.set(`line_items[${i}][price_data][product_data][images][0]`, `${baseUrl}${product.images[0]}`);
-    });
+    order.lines
+      .flatMap(({ product, items }) => items.map((item) => ({ product, item })))
+      .forEach(({ product, item }, i) => {
+        params.set(`line_items[${i}][quantity]`, String(item.quantity));
+        params.set(`line_items[${i}][price_data][currency]`, "mxn");
+        params.set(`line_items[${i}][price_data][unit_amount]`, String(Math.round(item.unitPrice * 100)));
+        params.set(`line_items[${i}][price_data][product_data][name]`, item.name);
+        params.set(`line_items[${i}][price_data][product_data][images][0]`, `${baseUrl}${product.images[0]}`);
+      });
 
     const response = await fetch("https://api.stripe.com/v1/checkout/sessions", {
       method: "POST",

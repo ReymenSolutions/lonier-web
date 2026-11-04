@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Lonier Skin Serum | Lonier Skin</title>
-  <meta name="description" content="Lonier Skin Serum con vitamina C, ácido hialurónico y niacinamida 3.5%. Ahora $299 MXN (antes $349). Envío gratis comprando 3 piezas." />
+  <meta name="description" content="Lonier Skin Serum con vitamina C, ácido hialurónico y niacinamida 3.5%. Desde $249.67 por frasco en paquete. Envío gratis llevando 3 piezas o desde $999." />
   <meta property="og:type" content="product" />
   <meta property="og:title" content="Lonier Skin Serum" />
   <meta property="og:image" content="https://lonier.mx/assets/og-image.jpg" />
@@ -17,7 +17,7 @@
 <body>
   <div id="site-header"></div>
 
-  <main class="section">
+  <main class="section pdp-section">
     <div class="container">
       <nav class="breadcrumbs" aria-label="Ruta">
         <a href="/">Inicio</a> / <a href="/tienda">Tienda</a> / <span id="crumbName"></span>
@@ -25,8 +25,11 @@
 
       <div class="pdp" id="pdp">
         <div class="pdp-gallery">
-          <div class="product-img-box pdp-main">
-            <img id="mainImage" alt="" />
+          <div class="gallery" id="gallery" aria-roledescription="carrusel" aria-label="Fotos del producto">
+            <div class="gallery-track" id="track" tabindex="0"></div>
+            <button class="gallery-nav prev" id="prev" aria-label="Foto anterior"><span data-icon="chevronLeft" data-size="22"></span></button>
+            <button class="gallery-nav next" id="next" aria-label="Foto siguiente"><span data-icon="chevronRight" data-size="22"></span></button>
+            <div class="gallery-dots" id="dots"></div>
           </div>
           <div class="pdp-thumbs" id="thumbs"></div>
         </div>
@@ -35,38 +38,32 @@
           <div class="eyebrow" id="tagline"></div>
           <h1 class="pdp-title" id="name"></h1>
 
-          <div class="price">
-            <s class="old-price" data-compare></s> <span data-price></span> <small>MXN</small>
-            <span class="discount-badge" data-discount></span>
-          </div>
-
           <p id="description"></p>
 
-          <div class="feature-list" id="features"></div>
-
-          <div class="bundles" id="bundles" role="radiogroup" aria-label="Elige cuántas piezas"></div>
+          <div id="bundles"></div>
 
           <p class="stock-note" data-stock-note hidden></p>
 
-          <div class="qty-row">
+          <div class="buy-row">
             <div class="qty">
-              <button type="button" data-qty="-1" aria-label="Quitar uno">−</button>
-              <span id="qty">1</span>
-              <button type="button" data-qty="1" aria-label="Agregar uno">+</button>
+              <button type="button" data-qty="-1" aria-label="Quitar uno"><span data-icon="minus" data-size="18"></span></button>
+              <span id="qty">2</span>
+              <button type="button" data-qty="1" aria-label="Agregar uno"><span data-icon="plus" data-size="18"></span></button>
             </div>
-            <button class="btn btn-gold" id="addBtn">Agregar al carrito</button>
+            <button class="btn btn-primary btn-buy" id="buyNow">Comprar ahora</button>
           </div>
+          <button class="btn btn-ghost btn-add" id="addBtn">Agregar al carrito</button>
+          <a class="btn btn-ml" id="mlLink" target="_blank" rel="noopener" hidden>Comprar en Mercado Libre</a>
 
-          <div class="pdp-secondary">
-            <button class="btn btn-primary" id="buyNow">Comprar ahora</button>
-            <a class="btn btn-ml" id="mlLink" target="_blank" rel="noopener" hidden>Comprar en Mercado Libre</a>
-          </div>
+          <div id="payLogos"></div>
 
           <ul class="trust-list">
-            <li id="shippingInfo"></li>
-            <li>Pago seguro con Mercado Pago o Stripe</li>
-            <li>¿Dudas? <a id="waLink" target="_blank" rel="noopener">Escríbenos por WhatsApp</a></li>
+            <li><span data-icon="truck" data-size="18"></span><span id="shippingInfo"></span></li>
+            <li><span data-icon="shield" data-size="18"></span><span>Pago seguro con Mercado Pago, PayPal o tarjeta</span></li>
+            <li><span data-icon="whatsapp" data-size="18"></span><span>¿Dudas? <a id="waLink" target="_blank" rel="noopener">Escríbenos por WhatsApp</a></span></li>
           </ul>
+
+          <div class="feature-list" id="features"></div>
 
           <details class="pdp-details" open>
             <summary>Ingredientes principales</summary>
@@ -86,19 +83,31 @@
       </div>
 
       <div class="empty" id="notFound" hidden>
-        Este producto no está disponible.<br /><a class="link-arrow" href="/tienda">Ir a la tienda →</a>
+        Este producto no está disponible.<br /><a class="link-arrow" href="/tienda">Ir a la tienda</a>
       </div>
     </div>
   </main>
 
+  <section class="section" id="como-usar">
+    <div class="container" data-section="how-to"></div>
+  </section>
+
+  <section class="section results-section">
+    <div class="container" data-section="results"></div>
+  </section>
+
   <div id="site-footer"></div>
 
   <script type="module">
-    import { STORE, PRODUCTS, getProduct, shippingFor, shippingSummary, formatMXN } from "/js/store.js";
-    import { initLayout, addToCart, addToCartAndOpen, bindPrices, imgFallback, whatsappUrl } from "/js/layout.js";
+    import { STORE, PRODUCTS, getProduct, shippingSummary } from "/js/store.js";
+    import { initLayout, addToCart, addToCartAndOpen, imgFallback, whatsappUrl } from "/js/layout.js";
     import { applyStock } from "/js/stock.js";
     import { trackViewItem } from "/js/analytics.js";
+    import { mountBundlePicker } from "/js/bundles.js";
+    import { paymentLogos, renderIcons } from "/js/icons.js";
+    import { mountSections } from "/js/sections.js";
 
+    mountSections();
     initLayout();
 
     const id = new URLSearchParams(location.search).get("id") || PRODUCTS[0].id;
@@ -119,10 +128,9 @@
         .map((i) => `<li><strong>${i.name}</strong> ${i.benefit}</li>`)
         .join("");
       document.getElementById("precautions").innerHTML = (product.precautions || []).map((s) => `<li>${s}</li>`).join("");
-      bindPrices(product);
-
       document.getElementById("shippingInfo").textContent = shippingSummary();
       document.getElementById("waLink").href = whatsappUrl(`Hola, tengo una pregunta sobre ${product.name}.`);
+      document.getElementById("payLogos").innerHTML = paymentLogos();
 
       if (STORE.mercadoLibreUrl) {
         const ml = document.getElementById("mlLink");
@@ -130,80 +138,72 @@
         ml.hidden = false;
       }
 
-      const main = document.getElementById("mainImage");
-      imgFallback(main);
-      main.src = product.images[0];
-      main.alt = product.name;
-
+      // ---------- Galería: se desliza con el dedo (scroll-snap) y con miniaturas, puntos y flechas ----------
+      const track = document.getElementById("track");
       const thumbs = document.getElementById("thumbs");
-      if (product.images.length > 1) {
-        thumbs.innerHTML = product.images
-          .map((src, i) => `<button class="pdp-thumb${i === 0 ? " active" : ""}" data-src="${src}" aria-label="Ver imagen ${i + 1}"><img src="${src}" alt="" /></button>`)
-          .join("");
-        thumbs.querySelectorAll("img").forEach(imgFallback);
-        thumbs.addEventListener("click", (event) => {
-          const btn = event.target.closest("[data-src]");
-          if (!btn) return;
-          main.src = btn.dataset.src;
-          thumbs.querySelectorAll(".pdp-thumb").forEach((t) => t.classList.toggle("active", t === btn));
-        });
-      }
-
-      let quantity = 1;
-      const qtyEl = document.getElementById("qty");
-      const bundlesEl = document.getElementById("bundles");
-      const freeQty = STORE.shipping.freeFromQty;
-
-      // Paquetes de 1, 2 y 3 piezas; el de envío gratis va destacado.
-      const bundleSizes = freeQty != null && freeQty > 1 ? [...new Set([1, freeQty - 1, freeQty])] : [];
-      bundlesEl.innerHTML = bundleSizes
-        .map((n) => {
-          const shipping = shippingFor(n);
-          return `
-          <button type="button" class="bundle${n === freeQty ? " featured" : ""}" data-bundle="${n}" role="radio">
-            ${n === freeQty ? `<span class="bundle-tag">Envío gratis</span>` : ""}
-            <strong>${n} ${n === 1 ? "pieza" : "piezas"}</strong>
-            <span class="bundle-price">${formatMXN(product.price * n)}</span>
-            <small>${shipping ? `+ ${formatMXN(shipping)} de envío` : `Ahorras ${formatMXN(STORE.shipping.fee)} de envío`}</small>
-          </button>`;
-        })
+      const dots = document.getElementById("dots");
+      track.innerHTML = product.images
+        .map((src, i) => `<div class="slide"><img src="${src}" alt="${product.name} · foto ${i + 1}" ${i ? 'loading="lazy"' : 'fetchpriority="high"'} /></div>`)
         .join("");
+      thumbs.innerHTML = product.images
+        .map((src, i) => `<button class="pdp-thumb" data-index="${i}" aria-label="Ver foto ${i + 1}"><img src="${src}" alt="" loading="lazy" /></button>`)
+        .join("");
+      dots.innerHTML = product.images.map((_, i) => `<button data-index="${i}" aria-label="Foto ${i + 1}"></button>`).join("");
+      document.querySelectorAll("#gallery img, #thumbs img").forEach(imgFallback);
 
-      function setQuantity(n) {
-        quantity = Math.max(1, Math.min(STORE.maxQtyPerItem, n));
-        qtyEl.textContent = quantity;
-        bundlesEl.querySelectorAll("[data-bundle]").forEach((b) => {
-          const selected = Number(b.dataset.bundle) === quantity;
-          b.classList.toggle("selected", selected);
-          b.setAttribute("aria-checked", selected);
-        });
+      let current = 0;
+      const goTo = (i) => track.scrollTo({ left: track.clientWidth * i, behavior: "smooth" });
+      function markActive(i) {
+        current = i;
+        thumbs.querySelectorAll(".pdp-thumb").forEach((t, n) => t.classList.toggle("active", n === i));
+        dots.querySelectorAll("button").forEach((d, n) => d.classList.toggle("active", n === i));
+        document.getElementById("prev").disabled = i === 0;
+        document.getElementById("next").disabled = i === product.images.length - 1;
       }
+      track.addEventListener("scroll", () => {
+        const i = Math.round(track.scrollLeft / track.clientWidth);
+        if (i !== current) markActive(i);
+      }, { passive: true });
+      thumbs.addEventListener("click", (e) => {
+        const btn = e.target.closest("[data-index]");
+        if (btn) goTo(Number(btn.dataset.index));
+      });
+      dots.addEventListener("click", (e) => {
+        const btn = e.target.closest("[data-index]");
+        if (btn) goTo(Number(btn.dataset.index));
+      });
+      document.getElementById("prev").addEventListener("click", () => goTo(Math.max(0, current - 1)));
+      document.getElementById("next").addEventListener("click", () => goTo(Math.min(product.images.length - 1, current + 1)));
+      track.addEventListener("keydown", (e) => {
+        if (e.key === "ArrowRight") goTo(Math.min(product.images.length - 1, current + 1));
+        if (e.key === "ArrowLeft") goTo(Math.max(0, current - 1));
+      });
+      markActive(0);
 
-      bundlesEl.addEventListener("click", (event) => {
-        const btn = event.target.closest("[data-bundle]");
-        if (btn) setQuantity(Number(btn.dataset.bundle));
+      // ---------- Paquetes y cantidad ----------
+      const qtyEl = document.getElementById("qty");
+      const picker = mountBundlePicker(document.getElementById("bundles"), product, {
+        onChange: (qty) => (qtyEl.textContent = qty),
       });
       document.querySelectorAll("[data-qty]").forEach((btn) =>
-        btn.addEventListener("click", () => setQuantity(quantity + Number(btn.dataset.qty)))
+        btn.addEventListener("click", () => picker.set(picker.qty + Number(btn.dataset.qty)))
       );
-      setQuantity(1);
 
-      document.getElementById("addBtn").addEventListener("click", () => {
-        addToCartAndOpen(product.id, quantity);
-        setQuantity(1);
-      });
-
+      document.getElementById("addBtn").addEventListener("click", () => addToCartAndOpen(product.id, picker.qty));
       document.getElementById("buyNow").addEventListener("click", () => {
-        addToCart(product.id, quantity);
+        addToCart(product.id, picker.qty);
         location.href = "/carrito";
       });
 
       ["addBtn", "buyNow"].forEach((id) => (document.getElementById(id).dataset.add = product.id));
       document.querySelector("[data-stock-note]").dataset.stockNote = product.id;
+      renderIcons();
       applyStock();
       trackViewItem(product);
 
-      const schema = {
+      const ld = document.createElement("script");
+      ld.type = "application/ld+json";
+      ld.textContent = JSON.stringify({
         "@context": "https://schema.org",
         "@type": "Product",
         name: product.name,
@@ -217,10 +217,7 @@
           availability: "https://schema.org/InStock",
           url: location.href,
         },
-      };
-      const ld = document.createElement("script");
-      ld.type = "application/ld+json";
-      ld.textContent = JSON.stringify(schema);
+      });
       document.head.appendChild(ld);
     }
   </script>

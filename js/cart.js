@@ -1,4 +1,4 @@
-import { STORE, getProduct, shippingFor } from "./store.js";
+import { STORE, compareAtTotalFor, getProduct, lineTotalFor, shippingFor } from "./store.js";
 
 const KEY = "lonier_cart_v1";
 let memory = [];
@@ -56,15 +56,13 @@ export const cart = {
   totals() {
     const lines = read().map((item) => {
       const product = getProduct(item.id);
-      return { product, qty: item.qty, lineTotal: product.price * item.qty };
+      const lineTotal = lineTotalFor(product, item.qty);
+      return { product, qty: item.qty, lineTotal, compareAtTotal: compareAtTotalFor(product, item.qty) };
     });
     const subtotal = lines.reduce((sum, line) => sum + line.lineTotal, 0);
-    const savings = lines.reduce(
-      (sum, line) => sum + Math.max(0, (line.product.compareAtPrice || 0) - line.product.price) * line.qty,
-      0
-    );
+    const savings = lines.reduce((sum, line) => sum + Math.max(0, line.compareAtTotal - line.lineTotal), 0);
     const qty = lines.reduce((sum, line) => sum + line.qty, 0);
-    const shipping = shippingFor(qty);
+    const shipping = shippingFor(qty, subtotal);
     return { lines, qty, subtotal, savings, shipping, total: subtotal + shipping };
   },
 };

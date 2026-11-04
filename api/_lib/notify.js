@@ -49,9 +49,9 @@ export async function notifyOwnerOfPaidOrder(order, { remainingStock = {}, warni
 
   const html = `
     <div style="font-family:system-ui,sans-serif;color:#1f1f1f;line-height:1.5">
-      <h2 style="margin:0 0 4px">🛍️ Nuevo pedido pagado: ${escape(order.id)}</h2>
+      <h2 style="margin:0 0 4px">Nuevo pedido pagado: ${escape(order.id)}</h2>
       <p style="margin:0 0 16px;color:#6f6a64">Pagado con ${escape(order.provider)} · ${new Date(order.paidAt).toLocaleString("es-MX", { timeZone: "America/Monterrey" })}</p>
-      ${warnings.map((w) => `<p style="background:#fdecec;padding:10px;border-radius:8px">⚠️ ${escape(w)}</p>`).join("")}
+      ${warnings.map((w) => `<p style="background:#fdecec;padding:10px;border-radius:8px"><strong>Atención:</strong> ${escape(w)}</p>`).join("")}
       ${itemsTable(order)}
       <h3>Enviar a</h3>
       <p>
@@ -61,7 +61,7 @@ export async function notifyOwnerOfPaidOrder(order, { remainingStock = {}, warni
         Tel: ${escape(c.phone)} ${phone ? `(<a href="${phone}">WhatsApp</a>)` : ""}<br>
         Correo: ${escape(c.email)}
       </p>
-      ${lowStock ? `<h3>⚠️ Inventario bajo</h3><ul>${lowStock}</ul><p>Recuerda ajustar también tu publicación en Mercado Libre.</p>` : ""}
+      ${lowStock ? `<h3>Inventario bajo</h3><ul>${lowStock}</ul><p>Recuerda ajustar también tu publicación en Mercado Libre.</p>` : ""}
     </div>`;
 
   return sendEmail({
@@ -97,7 +97,7 @@ export async function notifyCustomerOfShipment(order) {
   if (!canEmailCustomers()) return false;
   const html = `
     <div style="font-family:system-ui,sans-serif;color:#1f1f1f;line-height:1.5">
-      <h2>¡Tu pedido va en camino! 📦</h2>
+      <h2>¡Tu pedido va en camino!</h2>
       <p>Tu pedido <strong>${escape(order.id)}</strong> ya salió.</p>
       ${order.tracking ? `<p>Número de guía: <strong>${escape(order.tracking)}</strong></p>` : ""}
       <p>¿Dudas? Escríbenos por WhatsApp: <a href="https://wa.me/${STORE.whatsapp}">${STORE.whatsappDisplay}</a></p>

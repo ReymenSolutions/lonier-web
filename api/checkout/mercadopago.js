@@ -19,16 +19,18 @@ export default checkoutHandler({
       },
       body: JSON.stringify({
         external_reference: order.orderId,
-        items: order.lines.map(({ product, qty, unitPrice }) => ({
-          id: product.id,
-          title: product.name,
-          description: product.shortDescription,
-          picture_url: `${baseUrl}${product.images[0]}`,
-          category_id: "health_and_beauty",
-          quantity: qty,
-          currency_id: "MXN",
-          unit_price: unitPrice,
-        })),
+        items: order.lines.flatMap(({ product, items }) =>
+          items.map((item) => ({
+            id: item.id,
+            title: item.name,
+            description: product.shortDescription,
+            picture_url: `${baseUrl}${product.images[0]}`,
+            category_id: "health_and_beauty",
+            quantity: item.quantity,
+            currency_id: "MXN",
+            unit_price: item.unitPrice,
+          }))
+        ),
         shipments: { mode: "not_specified", cost: order.shipping },
         payer: {
           name: c.firstName,

@@ -1,8 +1,18 @@
 // Encabezado, pie de página, carrito lateral y botón de WhatsApp compartidos por todas las páginas.
-import { STORE, PLACEHOLDER_IMAGE, discountPercent, formatMXN, freeShippingMessage, getProduct } from "./store.js";
+import {
+  STORE,
+  PLACEHOLDER_IMAGE,
+  discountPercent,
+  formatMXN,
+  formatPrice,
+  freeShippingMessage,
+  freeShippingRule,
+  getProduct,
+} from "./store.js";
 import { cart } from "./cart.js";
 import { applyStock } from "./stock.js";
 import { initAnalytics, trackAddToCart } from "./analytics.js";
+import { icon, paymentLogos, renderIcons } from "./icons.js";
 
 export function imgFallback(img) {
   const swap = () => {
@@ -17,10 +27,37 @@ export function whatsappUrl(message) {
   return `https://wa.me/${STORE.whatsapp}?text=${encodeURIComponent(message)}`;
 }
 
-const announcement =
-  STORE.shipping.freeFromQty != null
-    ? `<div class="announcement">🚚 Envío <strong>GRATIS</strong> comprando ${STORE.shipping.freeFromQty} piezas o más</div>`
-    : "";
+// Selector − 1 + para una línea del carrito (lo usan el carrito lateral y la página de carrito).
+export function qtyStepper(id, qty) {
+  return `
+    <div class="qty qty-sm">
+      <button type="button" data-cart-id="${id}" data-delta="-1" aria-label="Quitar una pieza" ${qty <= 1 ? "disabled" : ""}>${icon("minus", { size: 16 })}</button>
+      <span aria-live="polite">${qty}</span>
+      <button type="button" data-cart-id="${id}" data-delta="1" aria-label="Agregar una pieza" ${qty >= STORE.maxQtyPerItem ? "disabled" : ""}>${icon("plus", { size: 16 })}</button>
+    </div>`;
+}
+
+// Maneja los clics de − / + / Eliminar dentro de un contenedor del carrito.
+export function bindCartControls(container) {
+  container.addEventListener("click", (event) => {
+    const button = event.target.closest("button");
+    if (!button) return;
+    if (button.dataset.remove) cart.remove(button.dataset.remove);
+    if (button.dataset.cartId) {
+      const item = cart.items().find((i) => i.id === button.dataset.cartId);
+      if (item) cart.setQty(item.id, item.qty + Number(button.dataset.delta));
+    }
+  });
+}
+
+export function freeShippingBadge() {
+  return `<div class="free-badge">${icon("truck", { size: 18 })}<span>Tu pedido tiene <strong>envío gratis</strong></span></div>`;
+}
+
+const rule = freeShippingRule();
+const announcement = rule
+  ? `<div class="announcement">${icon("truck", { size: 16 })}<span>Envío <strong>GRATIS</strong> ${rule}</span></div>`
+  : "";
 
 const header = `
   ${announcement}
@@ -36,7 +73,7 @@ const header = `
       <div class="nav-actions">
         <a class="btn btn-primary" href="/producto?id=lonier-skin-serum">Comprar ahora</a>
         <button class="cart-btn" id="openCart" aria-label="Abrir carrito">
-          🛒
+          ${icon("bag", { size: 20 })}
           <span class="cart-count" id="cartCount">0</span>
         </button>
       </div>
@@ -48,7 +85,7 @@ const footer = `
     <div class="container footer-inner">
       <div>
         <strong>Lonier Skin</strong><br />
-        Serum facial premium.
+        Cuidado facial natural · Hecho en México
       </div>
       <div class="footer-links">
         <a href="/tienda">Tienda</a>
@@ -57,11 +94,12 @@ const footer = `
         <a href="/politicas#terminos">Términos</a>
         <a href="/politicas#privacidad">Aviso de privacidad</a>
       </div>
-      <div>
-        WhatsApp: ${STORE.whatsappDisplay}<br />
-        © ${new Date().getFullYear()} Lonier Skin. Todos los derechos reservados.
+      <div class="footer-contact">
+        <a href="https://wa.me/${STORE.whatsapp}" target="_blank" rel="noopener">${icon("whatsapp", { size: 16 })} ${STORE.whatsappDisplay}</a>
+        <span>© ${new Date().getFullYear()} Lonier Skin. Todos los derechos reservados.</span>
       </div>
     </div>
+    <div class="container footer-pay">${paymentLogos()}</div>
   </footer>`;
 
 const drawer = `
@@ -69,20 +107,19 @@ const drawer = `
   <aside class="cart-panel" id="cartPanel" aria-label="Carrito">
     <div class="cart-head">
       <h3>Tu carrito</h3>
-      <button class="close-cart" id="closeCart" aria-label="Cerrar carrito">×</button>
+      <button class="close-cart" id="closeCart" aria-label="Cerrar carrito">${icon("x", { size: 20 })}</button>
     </div>
     <div class="cart-body" id="cartBody"></div>
-    <div class="cart-footer">
-      <div class="subtotal">
-        <span>Subtotal</span>
-        <span id="drawerSubtotal">$0 MXN</span>
-      </div>
-      <p class="cart-note" id="drawerShippingNote"></p>
+    <div class="cart-footer" id="drawerFooter">
+      <div class="cart-row"><span>Subtotal</span><span id="drawerSubtotal">$0 MXN</span></div>
+      <div class="cart-row muted"><span>Envío</span><span id="drawerShipping"></span></div>
+      <div id="drawerShippingNote"></div>
+      <div class="cart-row total"><span>Total</span><span id="drawerTotal"></span></div>
       <a class="btn btn-gold" href="/carrito">Ver carrito y pagar</a>
       <button class="btn btn-ghost" id="keepShopping">Seguir comprando</button>
     </div>
   </aside>
-  <a class="whatsapp-float" href="https://wa.me/${STORE.whatsapp}" target="_blank" rel="noopener" aria-label="Escríbenos por WhatsApp">☏</a>`;
+  <a class="whatsapp-float" href="https://wa.me/${STORE.whatsapp}" target="_blank" rel="noopener" aria-label="Escríbenos por WhatsApp">${icon("whatsapp", { size: 28 })}</a>`;
 
 export function openCart() {
   document.getElementById("cartPanel").classList.add("active");
@@ -97,31 +134,42 @@ export function closeCart() {
 }
 
 function renderDrawer() {
-  const { lines, qty, subtotal } = cart.totals();
+  const { lines, qty, subtotal, shipping, total } = cart.totals();
   document.getElementById("cartCount").textContent = qty;
   document.getElementById("drawerSubtotal").textContent = formatMXN(subtotal);
-  document.getElementById("drawerShippingNote").textContent =
-    freeShippingMessage(qty) || `Envío: ${formatMXN(STORE.shipping.fee)}.`;
-  document.querySelectorAll("[data-free-shipping]").forEach((el) => (el.textContent = freeShippingMessage(qty)));
+  document.getElementById("drawerShipping").textContent = shipping ? formatMXN(shipping) : "Gratis";
+  document.getElementById("drawerTotal").textContent = formatMXN(total);
+  document.getElementById("drawerShippingNote").innerHTML =
+    lines.length && !shipping ? freeShippingBadge() : `<p class="cart-note">${freeShippingMessage(qty, subtotal)}</p>`;
+  document.getElementById("drawerFooter").hidden = lines.length === 0;
+  document.querySelectorAll("[data-free-shipping]").forEach((el) => (el.textContent = freeShippingMessage(qty, subtotal)));
 
   const body = document.getElementById("cartBody");
   if (lines.length === 0) {
-    body.innerHTML = `<div class="empty">Tu carrito está vacío.<br />Agrega Lonier Skin Serum para continuar.</div>`;
+    body.innerHTML = `
+      <div class="empty">
+        Tu carrito está vacío.<br />Agrega Lonier Skin Serum para continuar.
+        <a class="btn btn-gold" href="/producto?id=lonier-skin-serum">Ver producto</a>
+      </div>`;
     return;
   }
 
   body.innerHTML = lines
     .map(
-      ({ product, qty, lineTotal }) => `
+      ({ product, qty: lineQty, lineTotal, compareAtTotal }) => `
       <div class="cart-item">
         <div class="cart-item-img"><img src="${product.images[0]}" alt="${product.name}" /></div>
-        <div>
+        <div class="cart-item-info">
           <h4>${product.name}</h4>
-          <p>Cantidad: ${qty}</p>
+          <p>${lineQty > 1 ? `${formatPrice(Math.round((lineTotal / lineQty) * 100) / 100)} por frasco` : "1 frasco"}</p>
           <div class="cart-item-bottom">
-            <strong>${formatMXN(lineTotal)}</strong>
-            <button class="remove" data-remove="${product.id}">Eliminar</button>
+            ${qtyStepper(product.id, lineQty)}
+            <div class="cart-item-price">
+              ${compareAtTotal > lineTotal ? `<s>${formatPrice(compareAtTotal)}</s>` : ""}
+              <strong>${formatMXN(lineTotal)}</strong>
+            </div>
           </div>
+          <button class="remove" data-remove="${product.id}">Eliminar</button>
         </div>
       </div>`
     )
@@ -142,11 +190,9 @@ export function initLayout() {
   document.addEventListener("keydown", (event) => {
     if (event.key === "Escape") closeCart();
   });
-  document.getElementById("cartBody").addEventListener("click", (event) => {
-    const id = event.target.dataset.remove;
-    if (id) cart.remove(id);
-  });
+  bindCartControls(document.getElementById("cartBody"));
 
+  renderIcons();
   document.querySelectorAll("img").forEach(imgFallback);
   window.addEventListener("cart:change", renderDrawer);
   renderDrawer();

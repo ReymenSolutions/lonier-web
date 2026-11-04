@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Lonier Skin | Serum Facial Premium</title>
-  <meta name="description" content="Lonier Skin Serum con vitamina C, ácido hialurónico y niacinamida 3.5%. Hecho en México. Ahora $299 MXN (antes $349). Envío gratis comprando 3 piezas." />
+  <meta name="description" content="Lonier Skin Serum con vitamina C, ácido hialurónico y niacinamida 3.5%. Hecho en México. Desde $299 MXN. Envío gratis llevando 3 piezas o desde $999." />
   <meta property="og:type" content="website" />
   <meta property="og:title" content="Lonier Skin | Serum Facial Premium" />
   <meta property="og:description" content="Serum facial con vitamina C, ácido hialurónico y niacinamida 3.5%. Ahora $299 MXN." />
@@ -43,7 +43,7 @@
 
         <div class="hero-points">
           <span>Envío a todo México</span>
-          <span>Mercado Pago o tarjeta</span>
+          <span>Mercado Pago, PayPal o tarjeta</span>
           <span>Rutina diaria</span>
         </div>
       </div>
@@ -76,19 +76,19 @@
 
       <div class="benefits">
         <div class="benefit-card">
-          <div class="icon">✦</div>
+          <div class="benefit-icon"><span data-icon="sun" data-size="26"></span></div>
           <h3>Luminosidad visible</h3>
           <p>Ayuda a que la piel luzca más fresca, radiante y con apariencia saludable.</p>
         </div>
 
         <div class="benefit-card">
-          <div class="icon">◌</div>
+          <div class="benefit-icon"><span data-icon="droplets" data-size="26"></span></div>
           <h3>Hidratación ligera</h3>
           <p>Textura cómoda para uso diario, sin sensación pesada o grasosa.</p>
         </div>
 
         <div class="benefit-card">
-          <div class="icon">☼</div>
+          <div class="benefit-icon"><span data-icon="sparkles" data-size="26"></span></div>
           <h3>Acabado uniforme</h3>
           <p>Complementa tu rutina para una piel con mejor textura visual y glow natural.</p>
         </div>
@@ -122,20 +122,22 @@
             <div>Vitamina C, ácido hialurónico y niacinamida 3.5%</div>
             <div>Textura ligera, sin sensación grasosa</div>
             <div>Hecho en México</div>
-            <div>Paga con Mercado Pago o tarjeta</div>
           </div>
 
-          <div class="qty-row">
+          <div id="homeBundles"></div>
+
+          <div class="buy-row">
             <div class="qty">
-              <button type="button" data-qty="-1" aria-label="Quitar uno">−</button>
-              <span id="qty">1</span>
-              <button type="button" data-qty="1" aria-label="Agregar uno">+</button>
+              <button type="button" data-qty="-1" aria-label="Quitar uno"><span data-icon="minus" data-size="18"></span></button>
+              <span id="qty">2</span>
+              <button type="button" data-qty="1" aria-label="Agregar uno"><span data-icon="plus" data-size="18"></span></button>
             </div>
-
-            <button class="btn btn-gold" data-add="lonier-skin-serum" data-use-qty>Agregar al carrito</button>
+            <button class="btn btn-gold btn-buy" data-add="lonier-skin-serum" data-use-qty>Agregar al carrito</button>
           </div>
 
-          <a class="link-arrow" href="/producto?id=lonier-skin-serum">Ver detalles del producto →</a>
+          <div id="homePayLogos"></div>
+
+          <a class="link-arrow" href="/producto?id=lonier-skin-serum">Ver detalles del producto <span data-icon="arrowRight" data-size="16"></span></a>
         </div>
       </div>
     </div>
@@ -164,20 +166,12 @@
     </div>
   </section>
 
-  <section class="section" id="como-usar">
-    <div class="container">
-      <div class="section-head">
-        <h2>Cómo usarlo.</h2>
-        <p>Cuatro pasos, de mañana y/o de noche.</p>
-      </div>
+  <section class="section howto-section" id="como-usar">
+    <div class="container" data-section="how-to"></div>
+  </section>
 
-      <ol class="steps">
-        <li><strong>Limpia</strong><span>Lava y seca tu rostro.</span></li>
-        <li><strong>Aplica</strong><span>De 3 a 5 gotas en el rostro limpio.</span></li>
-        <li><strong>Masajea</strong><span>Con toques suaves hasta que se absorba.</span></li>
-        <li><strong>Finaliza</strong><span>Con tu crema hidratante y, de día, protector solar (SPF).</span></li>
-      </ol>
-    </div>
+  <section class="section results-section" id="resultados">
+    <div class="container" data-section="results"></div>
   </section>
 
   <section class="section" id="opiniones">
@@ -191,19 +185,19 @@
 
       <div class="testimonials">
         <div class="review">
-          <div class="stars">★★★★★</div>
+          <div class="stars" data-stars></div>
           <p>“Me encantó la presentación. Se siente como un producto muy elegante.”</p>
           <strong>Cliente verificado</strong>
         </div>
 
         <div class="review">
-          <div class="stars">★★★★★</div>
+          <div class="stars" data-stars></div>
           <p>“La textura es ligera y queda muy bien en mi rutina de noche.”</p>
           <strong>Cliente verificado</strong>
         </div>
 
         <div class="review">
-          <div class="stars">★★★★★</div>
+          <div class="stars" data-stars></div>
           <p>“Se ve premium desde la página hasta el empaque. Muy buena experiencia.”</p>
           <strong>Cliente verificado</strong>
         </div>
@@ -220,19 +214,19 @@
       <div class="faq">
         <details>
           <summary>¿Cuánto cuesta el envío y cuánto tarda?</summary>
-          <p id="faqShipping">Envío estándar a todo México (3 a 7 días hábiles): $99 MXN, gratis comprando 3 piezas o más.</p>
+          <p id="faqShipping">Envío estándar a todo México (3 a 7 días hábiles): $99 MXN. Gratis llevando 3 piezas o más o en compras desde $999 MXN.</p>
         </details>
         <details>
           <summary>¿Qué formas de pago aceptan?</summary>
           <p>
-            Mercado Pago (tarjetas, saldo en cuenta, OXXO y meses sin intereses según promociones vigentes)
-            y tarjeta de crédito o débito a través de Stripe. También puedes pedir por WhatsApp.
+            Mercado Pago (tarjetas, saldo en cuenta, OXXO y meses sin intereses según promociones vigentes),
+            PayPal y tarjeta de crédito o débito Visa, Mastercard o American Express. También puedes pedir por WhatsApp.
           </p>
         </details>
         <details>
           <summary>¿Es seguro pagar en esta página?</summary>
           <p>
-            Sí. El pago se hace directamente en la página segura de Mercado Pago o Stripe;
+            Sí. El pago se hace directamente en la página segura de Mercado Pago, PayPal o Stripe;
             nosotros nunca vemos ni guardamos los datos de tu tarjeta.
           </p>
         </details>
@@ -253,7 +247,7 @@
       <div class="cta">
         <h2>Empieza tu rutina con Lonier Skin.</h2>
         <p>
-          Agrega el serum al carrito y paga con Mercado Pago o tarjeta. Te lo enviamos a todo México.
+          Agrega el serum al carrito y paga con Mercado Pago, PayPal o tarjeta. Te lo enviamos a todo México.
         </p>
 
         <button class="btn btn-gold" data-add="lonier-skin-serum">
@@ -268,28 +262,29 @@
   <script type="module">
     import { STORE, getProduct, shippingSummary } from "/js/store.js";
     import { initLayout, addToCartAndOpen, bindPrices } from "/js/layout.js";
+    import { mountBundlePicker } from "/js/bundles.js";
+    import { icon, paymentLogos } from "/js/icons.js";
+    import { mountSections } from "/js/sections.js";
 
+    const product = getProduct("lonier-skin-serum");
+    mountSections();
+    document.querySelectorAll("[data-stars]").forEach((el) => (el.innerHTML = icon("star", { size: 16 }).repeat(5)));
     initLayout();
-    bindPrices(getProduct("lonier-skin-serum"));
+    bindPrices(product);
 
     document.getElementById("faqShipping").textContent = `${shippingSummary()}.`;
+    document.getElementById("homePayLogos").innerHTML = paymentLogos();
 
-    let quantity = 1;
     const qtyEl = document.getElementById("qty");
-
+    const picker = mountBundlePicker(document.getElementById("homeBundles"), product, {
+      onChange: (qty) => (qtyEl.textContent = qty),
+    });
     document.querySelectorAll("[data-qty]").forEach((btn) =>
-      btn.addEventListener("click", () => {
-        quantity = Math.max(1, Math.min(STORE.maxQtyPerItem, quantity + Number(btn.dataset.qty)));
-        qtyEl.textContent = quantity;
-      })
+      btn.addEventListener("click", () => picker.set(picker.qty + Number(btn.dataset.qty)))
     );
 
     document.querySelectorAll("[data-add]").forEach((btn) =>
-      btn.addEventListener("click", () => {
-        addToCartAndOpen(btn.dataset.add, btn.hasAttribute("data-use-qty") ? quantity : 1);
-        quantity = 1;
-        qtyEl.textContent = quantity;
-      })
+      btn.addEventListener("click", () => addToCartAndOpen(btn.dataset.add, btn.hasAttribute("data-use-qty") ? picker.qty : 1))
     );
   </script>
 </body>
