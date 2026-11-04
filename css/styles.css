@@ -1402,67 +1402,6 @@ h1 {
   font-size: 13px;
 }
 
-/* Paquetes en la página de producto */
-
-.bundles {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 10px;
-  margin-bottom: 20px;
-}
-
-.bundle {
-  position: relative;
-  display: grid;
-  gap: 4px;
-  text-align: left;
-  font: inherit;
-  color: var(--text);
-  background: white;
-  border: 2px solid var(--border);
-  border-radius: 18px;
-  padding: 16px 14px 14px;
-  cursor: pointer;
-  transition: .2s ease;
-}
-
-.bundle:hover {
-  border-color: var(--gold);
-}
-
-.bundle.selected {
-  border-color: var(--gold-dark);
-  box-shadow: 0 10px 24px rgba(159,125,56,.18);
-}
-
-.bundle .bundle-price {
-  font-weight: 900;
-  font-size: 18px;
-  letter-spacing: -0.03em;
-}
-
-.bundle small {
-  color: var(--muted);
-  font-size: 12px;
-  font-weight: 600;
-}
-
-.bundle.featured small {
-  color: #2f7d4f;
-}
-
-.bundle-tag {
-  position: absolute;
-  top: -11px;
-  right: 10px;
-  background: var(--gold-dark);
-  color: white;
-  font-size: 11px;
-  font-weight: 800;
-  padding: 3px 9px;
-  border-radius: 999px;
-}
-
 .stock-note {
   color: #b54545;
   font-weight: 800;
@@ -1660,12 +1599,6 @@ h1 {
 @media (max-width: 700px) {
   .stock-row,
   .order-cols {
-    grid-template-columns: 1fr;
-  }
-}
-
-@media (max-width: 420px) {
-  .bundles {
     grid-template-columns: 1fr;
   }
 }
@@ -2770,4 +2703,16 @@ label {
   width: 30px;
   height: 30px;
   stroke-width: 2;
+}
+
+/* Las columnas de las cuadrículas no deben ensancharse por su contenido
+   (sin esto, un texto o selector ancho empuja toda la sección fuera de la pantalla). */
+.hero-grid > *,
+.product-card > *,
+.pdp > *,
+.checkout-grid > *,
+.ingredients-split > *,
+.bundle-main,
+.bundle-side {
+  min-width: 0;
 }
