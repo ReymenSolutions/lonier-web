@@ -46,10 +46,9 @@ export const PRODUCTS = [
         qty: 2,
         price: 549,
         badge: "Más vendido",
-        perks: ["Para ti y para regalar, o de repuesto", "Asesoría por WhatsApp"],
-        highlight: "Asesoría personalizada por WhatsApp",
+        perks: ["Para ti y para regalar, o de repuesto"],
       },
-      { qty: 3, price: 749, badge: "Mejor valor", perks: ["Envío GRATIS", "El mejor precio por frasco", "Asesoría por WhatsApp"] },
+      { qty: 3, price: 749, badge: "Mejor valor", perks: ["Envío GRATIS", "El mejor precio por frasco"] },
     ],
     defaultBundle: 2,
     // La primera imagen es la principal (tienda, carrito y pagos).
