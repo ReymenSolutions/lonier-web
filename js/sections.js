@@ -1,6 +1,7 @@
 // Secciones que se repiten en varias páginas: "Cómo usar" y "Antes y después".
 // En el HTML: <div data-section="how-to"></div> y <div data-section="results"></div>.
 import { icon } from "./icons.js";
+import { PRODUCTS } from "./store.js";
 
 // Fotos de antes y después. Cuando las tengas, súbelas a assets/resultados/ y llena before/after, por ejemplo:
 //   { before: "/assets/resultados/ana-antes.webp", after: "/assets/resultados/ana-despues.webp", caption: "Ana, 4 semanas" }
@@ -118,7 +119,35 @@ function results() {
     </div>`;
 }
 
-const SECTIONS = { "how-to": howTo, results };
+function ingredients() {
+  const product = PRODUCTS[0];
+  return `
+    <div class="ingredients-split">
+      <img class="ingredients-photo" src="/assets/serum-ambiente.webp" alt="Lonier Skin Serum sobre mármol con limones y girasoles" width="896" height="1152" loading="lazy" />
+      <div>
+        <div class="section-head left">
+          <h2>Cinco ingredientes, una rutina simple.</h2>
+          <p>Una fórmula ligera que combina activos conocidos para cuidar tu piel todos los días.</p>
+        </div>
+        <ul class="ingredient-list">
+          ${product.ingredients.map((i) => `<li><strong>${i.name}</strong><span>${i.benefit}</span></li>`).join("")}
+        </ul>
+      </div>
+    </div>`;
+}
+
+function precautions() {
+  const product = PRODUCTS[0];
+  return `
+    <div class="precautions">
+      <h2>Precauciones</h2>
+      <ul>
+        ${product.precautions.map((p) => `<li>${icon("shield", { size: 18 })}<span>${p}</span></li>`).join("")}
+      </ul>
+    </div>`;
+}
+
+const SECTIONS = { "how-to": howTo, results, ingredients, precautions };
 
 export function mountSections(root = document) {
   root.querySelectorAll("[data-section]").forEach((el) => {

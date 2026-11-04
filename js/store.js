@@ -116,6 +116,28 @@ export function bundleBreakdown(product, qty) {
   return parts;
 }
 
+// Describe cómo se arma una cantidad, para no mostrar un "precio por frasco" promedio que parezca subir:
+// 4 → "Paquete de 3 + 1 frasco extra". Con withPrices: "Paquete de 3 ($749) + 1 frasco extra ($299)".
+export function breakdownLabel(product, qty, { withPrices = false } = {}) {
+  const parts = bundleBreakdown(product, qty);
+  const price = (amount) => (withPrices ? ` (${formatPrice(amount)})` : "");
+  return parts
+    .map((part, i) => {
+      if (part.qty === 1) {
+        const extra = i > 0 ? " extra" : "";
+        return `${part.count} ${part.count === 1 ? "frasco" : "frascos"}${extra}${price(part.price * part.count)}`;
+      }
+      const name = part.count === 1 ? `Paquete de ${part.qty}` : `${part.count} paquetes de ${part.qty}`;
+      return `${name}${price(part.price * part.count)}`;
+    })
+    .join(" + ");
+}
+
+// ¿La cantidad coincide exactamente con uno de los paquetes?
+export function isSingleBundle(product, qty) {
+  return (product.bundles || []).some((b) => b.qty === qty);
+}
+
 // Precio total de N piezas aplicando los paquetes.
 export function lineTotalFor(product, qty) {
   return bundleBreakdown(product, qty).reduce((sum, part) => sum + part.price * part.count, 0);

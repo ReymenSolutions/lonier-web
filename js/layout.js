@@ -3,6 +3,7 @@ import {
   STORE,
   PLACEHOLDER_IMAGE,
   activePromo,
+  breakdownLabel,
   discountPercent,
   formatMXN,
   formatPrice,
@@ -13,7 +14,7 @@ import {
 import { cart } from "./cart.js";
 import { applyStock } from "./stock.js";
 import { initAnalytics, trackAddToCart } from "./analytics.js";
-import { icon, paymentLogos, renderIcons } from "./icons.js";
+import { icon, renderIcons } from "./icons.js";
 
 export function imgFallback(img) {
   const swap = () => {
@@ -100,7 +101,6 @@ const footer = `
         <span>© ${new Date().getFullYear()} Lonier Skin. Todos los derechos reservados.</span>
       </div>
     </div>
-    <div class="container footer-pay">${paymentLogos()}</div>
   </footer>`;
 
 const drawer = `
@@ -162,7 +162,7 @@ function renderDrawer() {
         <div class="cart-item-img"><img src="${product.images[0]}" alt="${product.name}" /></div>
         <div class="cart-item-info">
           <h4>${product.name}</h4>
-          <p>${lineQty > 1 ? `${formatPrice(Math.round((lineTotal / lineQty) * 100) / 100)} por frasco` : "1 frasco"}</p>
+          <p>${breakdownLabel(product, lineQty)}</p>
           <div class="cart-item-bottom">
             ${qtyStepper(product.id, lineQty)}
             <div class="cart-item-price">

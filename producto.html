@@ -66,21 +66,6 @@
           </ul>
 
           <div class="feature-list" id="features"></div>
-
-          <details class="pdp-details" open>
-            <summary>Ingredientes principales</summary>
-            <ul class="pdp-ingredients" id="ingredients"></ul>
-          </details>
-
-          <details class="pdp-details">
-            <summary>Cómo usar</summary>
-            <ol id="howToUse"></ol>
-          </details>
-
-          <details class="pdp-details">
-            <summary>Precauciones</summary>
-            <ul id="precautions"></ul>
-          </details>
         </div>
       </div>
 
@@ -90,12 +75,20 @@
     </div>
   </main>
 
+  <section class="section" id="ingredientes">
+    <div class="container" data-section="ingredients"></div>
+  </section>
+
   <section class="section" id="como-usar">
     <div class="container" data-section="how-to"></div>
   </section>
 
   <section class="section results-section">
     <div class="container" data-section="results"></div>
+  </section>
+
+  <section class="section precautions-section">
+    <div class="container narrow" data-section="precautions"></div>
   </section>
 
   <div id="site-footer"></div>
@@ -126,11 +119,6 @@
       document.getElementById("description").textContent = product.description;
       bindPrices(product);
       document.getElementById("features").innerHTML = product.features.map((f) => `<div>${f}</div>`).join("");
-      document.getElementById("howToUse").innerHTML = product.howToUse.map((s) => `<li>${s}</li>`).join("");
-      document.getElementById("ingredients").innerHTML = (product.ingredients || [])
-        .map((i) => `<li><strong>${i.name}</strong> ${i.benefit}</li>`)
-        .join("");
-      document.getElementById("precautions").innerHTML = (product.precautions || []).map((s) => `<li>${s}</li>`).join("");
       document.getElementById("shippingInfo").textContent = shippingSummary();
       document.getElementById("waLink").href = whatsappUrl(`Hola, tengo una pregunta sobre ${product.name}.`);
       document.getElementById("payLogos").innerHTML = paymentLogos();

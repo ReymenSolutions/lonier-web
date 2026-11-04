@@ -96,7 +96,7 @@
   <div id="site-footer"></div>
 
   <script type="module">
-    import { STORE, formatMXN, formatPrice, lineTotalFor } from "/js/store.js";
+    import { STORE, breakdownLabel, formatMXN, formatPrice, lineTotalFor } from "/js/store.js";
     import { trackBeginCheckout } from "/js/analytics.js";
     import { cart } from "/js/cart.js";
     import { initLayout, addToCart, bindCartControls, freeShippingBadge, imgFallback, qtyStepper, whatsappUrl } from "/js/layout.js";
@@ -154,7 +154,7 @@
             <a class="line-img" href="/producto?id=${product.id}"><img src="${product.images[0]}" alt="${product.name}" /></a>
             <div class="line-info">
               <strong>${product.name}</strong>
-              <span>${qty > 1 ? `Paquete de ${qty} · ${formatPrice(Math.round((lineTotal / qty) * 100) / 100)} por frasco` : "1 frasco"}</span>
+              <span>${breakdownLabel(product, qty, { withPrices: qty > 3 })}</span>
               <button class="remove" data-remove="${product.id}">Eliminar</button>
             </div>
             ${qtyStepper(product.id, qty)}

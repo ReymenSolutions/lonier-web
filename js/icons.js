@@ -70,7 +70,10 @@ const LOGOS = {
     `<text x="24" y="13.5" text-anchor="middle" ${FONT} font-size="7.5" fill="#fff">mercado</text><text x="24" y="22.5" text-anchor="middle" ${FONT} font-size="7.5" fill="#fff">pago</text>`,
     "#009EE3"
   ),
-  oxxo: card("OXXO", `<text x="24" y="19.5" text-anchor="middle" ${FONT} font-size="11" fill="#FFD100" letter-spacing=".5">OXXO</text>`, "#E31E24"),
+  oxxo: card(
+    "OXXO",
+    `<rect x="4" y="6" width="40" height="18" rx="1.5" fill="#F9B000"/><rect x="4" y="8.6" width="40" height="12.8" fill="#E1251B"/><text x="24" y="18.6" text-anchor="middle" ${FONT} font-size="10" fill="#fff" letter-spacing=".6">OXXO</text>`
+  ),
 };
 
 export function paymentLogos(names = ["visa", "mastercard", "amex", "paypal", "mercadopago", "oxxo"]) {

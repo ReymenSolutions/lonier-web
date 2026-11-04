@@ -2816,3 +2816,217 @@ label {
   font-weight: 700;
   letter-spacing: .02em;
 }
+
+/* ---------- Precio por frasco: dato de referencia, no el precio a pagar ---------- */
+
+.bundle-each {
+  margin-top: 4px;
+  font-family: inherit;
+  font-style: normal;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--muted);
+  display: block;
+  line-height: 1.3;
+}
+
+.bundle-each small {
+  display: inline;
+  font-size: 12px;
+  font-weight: 500;
+  margin: 0 0 0 3px;
+}
+
+/* Combinación cuando se llevan más piezas que el paquete más grande */
+.bundle-combo {
+  display: grid;
+  gap: 4px;
+  padding: 12px 16px;
+  border-radius: 16px;
+  background: #f3ead9;
+  color: #5c4417;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.bundle-combo strong {
+  font-size: 14px;
+}
+
+/* ---------- Contador − / + siempre centrado ---------- */
+
+.qty {
+  display: inline-grid;
+  grid-template-columns: 44px 40px 44px;
+  align-items: center;
+  justify-items: center;
+  align-self: center;
+  padding: 0 4px;
+}
+
+.qty button {
+  width: 44px;
+  height: 44px;
+  padding: 0;
+}
+
+.qty span {
+  width: auto;
+  text-align: center;
+}
+
+.qty-sm {
+  grid-template-columns: 34px 30px 34px;
+  padding: 0 2px;
+}
+
+.qty-sm button {
+  width: 34px;
+  height: 34px;
+}
+
+.buy-row {
+  align-items: center;
+}
+
+.buy-row .qty {
+  height: 52px;
+}
+
+.buy-row .btn-buy {
+  min-height: 52px;
+}
+
+/* ---------- Menos espacio entre secciones ---------- */
+
+.section {
+  padding: 56px 0;
+}
+
+.section-head {
+  margin-bottom: 32px;
+}
+
+.hero {
+  padding: 56px 0 48px;
+}
+
+.pdp-section {
+  padding-top: 28px;
+}
+
+.results-section,
+.precautions-section {
+  padding-top: 24px;
+}
+
+.footer {
+  padding: 32px 0 28px;
+}
+
+/* ---------- Precauciones ---------- */
+
+.precautions {
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 28px;
+  padding: 28px;
+}
+
+.precautions h2 {
+  font-size: 22px;
+  letter-spacing: -0.03em;
+  margin-bottom: 16px;
+}
+
+.precautions ul {
+  list-style: none;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px 24px;
+}
+
+.precautions li {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  color: var(--muted);
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+.precautions li .icon {
+  color: var(--gold-dark);
+  margin-top: 2px;
+}
+
+@media (max-width: 900px) {
+  .section {
+    padding: 44px 0;
+  }
+
+  .hero {
+    padding: 36px 0 32px;
+  }
+
+  .hero-grid {
+    gap: 32px;
+  }
+}
+
+@media (max-width: 520px) {
+  .section {
+    padding: 36px 0;
+  }
+
+  .section-head {
+    margin-bottom: 24px;
+  }
+
+  .hero {
+    padding-top: 28px;
+  }
+
+  .pdp-section {
+    padding-top: 16px;
+  }
+
+  .results-section,
+  .precautions-section {
+    padding-top: 12px;
+  }
+
+  .precautions {
+    padding: 22px 18px;
+  }
+
+  .precautions ul {
+    grid-template-columns: 1fr;
+  }
+
+  .bundle-each {
+    font-size: 12.5px;
+  }
+}
+
+/* Antes y después en celular: carrusel deslizable en lugar de 3 tarjetas apiladas */
+@media (max-width: 900px) {
+  .results-grid {
+    display: flex;
+    max-width: none;
+    margin: 0 -18px;
+    padding: 0 18px 6px;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+  }
+
+  .results-grid::-webkit-scrollbar {
+    display: none;
+  }
+
+  .result-card {
+    flex: 0 0 min(82%, 360px);
+    scroll-snap-align: center;
+  }
+}

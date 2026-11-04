@@ -1,5 +1,5 @@
 // Selector de paquetes (1, 2 o 3 frascos) con ahorro, envío y precio por frasco.
-import { STORE, compareAtTotalFor, formatPrice, shippingFor } from "./store.js";
+import { STORE, breakdownLabel, compareAtTotalFor, formatPrice, isSingleBundle, lineTotalFor, shippingFor } from "./store.js";
 import { icon } from "./icons.js";
 
 function card(product, bundle, name) {
@@ -40,7 +40,9 @@ export function mountBundlePicker(container, product, { onChange } = {}) {
   container.setAttribute("aria-label", "Elige cuántos frascos");
   container.innerHTML = `
     <div class="bundles-title"><span>Elige tu rutina</span></div>
-    ${bundles.map((bundle) => card(product, bundle, name)).join("")}`;
+    ${bundles.map((bundle) => card(product, bundle, name)).join("")}
+    <div class="bundle-combo" hidden></div>`;
+  const combo = container.querySelector(".bundle-combo");
 
   let qty = product.defaultBundle || 1;
 
@@ -51,6 +53,15 @@ export function mountBundlePicker(container, product, { onChange } = {}) {
       el.classList.toggle("selected", selected);
       el.querySelector("input").checked = selected;
     });
+    // Más piezas que el paquete más grande: se explica la combinación en lugar de un promedio por frasco.
+    combo.hidden = isSingleBundle(product, qty);
+    if (!combo.hidden) {
+      const total = lineTotalFor(product, qty);
+      const shipping = shippingFor(qty, total);
+      combo.innerHTML = `
+        <strong>${qty} frascos: ${breakdownLabel(product, qty)}</strong>
+        <span>${breakdownLabel(product, qty, { withPrices: true })} = <b>${formatPrice(total)}</b>${shipping ? ` + ${formatPrice(shipping)} envío` : " · Envío gratis"}</span>`;
+    }
     onChange?.(qty);
   }
 
