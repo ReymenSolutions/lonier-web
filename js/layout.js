@@ -72,7 +72,7 @@ const header = `
         <a href="/#preguntas">Preguntas</a>
       </div>
       <a href="/" class="brand" data-home aria-label="Lonier Skin, ir al inicio">
-        <img class="brand-logo" src="/assets/logo-160.webp" alt="" width="52" height="52" />
+        <img class="brand-logo" src="/assets/logo-gota-160.webp" alt="" width="52" height="52" />
         <span class="brand-text"><span class="brand-name">Lonier</span><span class="brand-sub">Skin</span></span>
       </a>
       <div class="nav-actions">
