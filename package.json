@@ -6,7 +6,8 @@
     "node": ">=20"
   },
   "scripts": {
-    "dev": "vercel dev",
+    "start": "node server.js",
+    "dev": "node --env-file=.env server.js",
     "test": "node --test"
   }
 }

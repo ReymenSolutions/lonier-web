@@ -1,6 +1,6 @@
 # Lonier Skin — tienda en línea
 
-Tienda de Lonier Skin hecha con HTML, CSS y JavaScript, sin frameworks. El cobro se hace con **Mercado Pago** y **Stripe** mediante funciones serverless en Vercel. Los pedidos y el inventario se guardan en Upstash Redis y los avisos de venta llegan por correo (Resend).
+Tienda de Lonier Skin hecha con HTML, CSS y JavaScript, sin frameworks. El cobro se hace con **Mercado Pago** y **Stripe**. Corre en un VPS con `server.js` detrás de nginx (o en Vercel sin cambios). Los pedidos y el inventario se guardan en Upstash Redis y los avisos de venta llegan por correo (Resend).
 
 ## Páginas
 
@@ -43,38 +43,117 @@ Los avisos repetidos de la pasarela no duplican el pedido ni descuentan inventar
 - **Botón de Mercado Libre:** `STORE.mercadoLibreUrl`.
 - **Fotos:** van en `assets/` en formato WebP y se listan en `images` del producto en `js/store.js`; la primera es la principal. `assets/og-image.jpg` (1200×630) es la imagen que aparece al compartir el enlace en WhatsApp o Facebook. Si una foto no carga se muestra `assets/serum-placeholder.svg`.
 
-## Publicar en Vercel (paso a paso)
+## Publicar en tu VPS con lonier.mx
 
-1. **Proyecto:** importa el repositorio en [vercel.com/new](https://vercel.com/new). No hay paso de build.
-2. **Base de datos:** en Vercel, **Storage → Create → Upstash (Redis)** y conéctala al proyecto. Eso crea `KV_REST_API_URL` y `KV_REST_API_TOKEN` (el plan gratis alcanza de sobra).
-3. **Correos:** crea una cuenta en [resend.com](https://resend.com), genera una API key y agrega en Vercel `RESEND_API_KEY` y `ORDER_EMAIL_TO` (tu correo). Sin dominio propio, Resend solo deja enviar al correo de tu cuenta, así que usa ese mismo correo en `ORDER_EMAIL_TO`. Cuando tengas dominio, verifícalo en Resend y agrega `EMAIL_FROM` para que tus clientes también reciban correos.
-4. **Panel:** agrega `ADMIN_PASSWORD` con una contraseña larga.
-5. **Mercado Pago:** agrega `MP_ACCESS_TOKEN`. Los avisos de pago se configuran solos. Opcional: en **Tus integraciones → Webhooks** copia la clave secreta a `MP_WEBHOOK_SECRET` para validar la firma.
-6. **Stripe:** agrega `STRIPE_SECRET_KEY`. En **Developers → Webhooks → Add endpoint** usa `https://TU-DOMINIO/api/webhooks/stripe` con los eventos `checkout.session.completed` y `checkout.session.async_payment_succeeded`, y copia el *Signing secret* a `STRIPE_WEBHOOK_SECRET`.
-7. **Medición:** pon tus IDs en `STORE.analytics` dentro de `js/store.js`:
+La tienda corre con `server.js` (Node, sin dependencias) detrás de nginx, con HTTPS gratis de Let's Encrypt. Se necesita un VPS con **Ubuntu 22.04/24.04 o Debian 12** y acceso por SSH como root.
+
+### 1. DNS en GoDaddy
+
+En GoDaddy: **Mi cuenta → Mis productos → Dominios → lonier.mx → DNS → Registros DNS**.
+
+| Tipo | Nombre | Valor | TTL |
+| --- | --- | --- | --- |
+| A | `@` | la IP pública de tu VPS | 600 segundos |
+| CNAME | `www` | `lonier.mx.` (o `@`) | 1 hora |
+
+- **Edita** el registro `A @` que ya existe (GoDaddy lo crea con el valor "Parked" o una IP suya). No agregues un segundo `A @`.
+- Si hay un registro **AAAA** con nombre `@` o `www`, bórralo, a menos que sea la IPv6 de tu VPS.
+- En **Reenvío (Forwarding)** no debe haber nada activo para el dominio, porque se salta los registros de arriba.
+- No toques los registros **MX** ni **TXT** si ya usas correo con el dominio.
+- Si en **Servidores de nombres (Nameservers)** no dice "GoDaddy" (por ejemplo, Cloudflare), estos registros se hacen allá y no en GoDaddy.
+
+Puedes revisar que ya apunte con:
+
+```bash
+dig +short lonier.mx
+```
+
+```bash
+dig +short www.lonier.mx
+```
+
+Ambos deben responder la IP de tu VPS. Normalmente tarda de 5 a 30 minutos y, en casos raros, hasta 48 horas.
+
+### 2. Acceso del VPS al repositorio (si es privado)
+
+En el VPS, como root, crea una llave y muéstrala:
+
+```bash
+ssh-keygen -t ed25519 -N "" -f ~/.ssh/id_ed25519 -C "vps-lonier"
+```
+
+```bash
+cat ~/.ssh/id_ed25519.pub
+```
+
+Cópiala en GitHub: **repositorio → Settings → Deploy keys → Add deploy key** (solo lectura).
+
+### 3. Instalar
+
+En el VPS, como root (cambia el correo; se usa para avisos de Let's Encrypt):
+
+```bash
+git clone git@github.com:ReymenSolutions/lonier-web.git /srv/lonier-web
+```
+
+```bash
+EMAIL=tu@correo.com bash /srv/lonier-web/deploy/setup.sh
+```
+
+El script instala Node 22, nginx y certbot. Además crea el servicio `lonier`, configura nginx para `lonier.mx` (y redirige `www.lonier.mx` a `lonier.mx`) y pide el certificado HTTPS. Si el DNS todavía no apunta al VPS, deja todo listo sin HTTPS: vuelve a correrlo cuando el DNS esté listo.
+
+Variables opcionales: `BRANCH` (rama a publicar, por defecto `main`) y `APP_PORT` (puerto interno, por defecto `3100`; cámbialo si ya lo usa otra app de tu VPS). El script no modifica otros sitios que tengas en nginx.
+
+### 4. Llaves y servicios
+
+Edita `/etc/lonier/lonier.env` (todas las variables están explicadas ahí) y luego reinicia:
+
+```bash
+nano /etc/lonier/lonier.env
+```
+
+```bash
+systemctl restart lonier
+```
+
+1. **Base de datos:** crea una base Redis gratis en [upstash.com](https://upstash.com) y copia `UPSTASH_REDIS_REST_URL` y `UPSTASH_REDIS_REST_TOKEN` de la pestaña *REST API*.
+2. **Correos:** crea una cuenta en [resend.com](https://resend.com) y llena `RESEND_API_KEY` y `ORDER_EMAIL_TO` (tu correo). Para escribirles también a tus clientes, en Resend **Domains → Add domain → lonier.mx**: Resend te da unos registros (MX y TXT de `send` y `resend._domainkey`) que agregas en el DNS de GoDaddy igual que arriba. Cuando aparezca "Verified", pon `EMAIL_FROM="Lonier Skin <pedidos@lonier.mx>"`.
+3. **Panel:** `ADMIN_PASSWORD` con una contraseña larga.
+4. **Mercado Pago:** `MP_ACCESS_TOKEN`. Los avisos de pago se configuran solos. Opcional: en **Tus integraciones → Webhooks**, copia la clave secreta a `MP_WEBHOOK_SECRET`.
+5. **Stripe:** `STRIPE_SECRET_KEY`. En **Developers → Webhooks → Add endpoint** usa `https://lonier.mx/api/webhooks/stripe` con los eventos `checkout.session.completed` y `checkout.session.async_payment_succeeded`, y copia el *Signing secret* a `STRIPE_WEBHOOK_SECRET`.
+6. **Medición:** pon tus IDs en `STORE.analytics` dentro de `js/store.js`:
    - `metaPixelId`: Meta → Administrador de eventos → tu conjunto de datos → ID (solo números).
    - `ga4Id`: Google Analytics → Administrar → Flujos de datos → ID de medición (`G-…`).
 
    Se registran estos eventos: vista de página, vista de producto (`ViewContent` / `view_item`), agregar al carrito (`AddToCart` / `add_to_cart`), inicio de pago (`InitiateCheckout` / `begin_checkout`) y compra (`Purchase` / `purchase`, una sola vez por pedido).
-8. **Prueba todo** con credenciales de prueba (`TEST-…`, `sk_test_…`) y luego cámbialas por las de producción.
+7. **Prueba todo** con credenciales de prueba (`TEST-…`, `sk_test_…`) y luego cámbialas por las de producción.
 
-Todas las variables están explicadas en `.env.example`.
+### Día a día en el VPS
+
+| Para | Comando |
+| --- | --- |
+| Publicar cambios nuevos del repositorio | `bash /srv/lonier-web/deploy/update.sh` |
+| Ver qué está pasando (errores, avisos de pago) | `journalctl -u lonier -f` |
+| Reiniciar después de cambiar llaves | `systemctl restart lonier` |
+| Ver si está corriendo | `systemctl status lonier` |
+
+El certificado HTTPS se renueva solo (certbot instala un temporizador).
+
+### Alternativa: Vercel
+
+La tienda también funciona en Vercel sin cambios (`vercel.json` y las funciones de `api/` siguen el formato de Vercel). Las variables son las mismas; la base de datos se puede conectar desde **Storage → Upstash**.
 
 ## Desarrollo local
 
 ```bash
-npm i -g vercel
+cp .env.example .env
 ```
 
 ```bash
-cp .env.example .env.local
+node --env-file=.env server.js
 ```
 
-```bash
-npm run dev
-```
-
-Las pruebas de las funciones de pago se corren con:
+La tienda queda en `http://127.0.0.1:3000`. Las pruebas se corren con:
 
 ```bash
 npm test
