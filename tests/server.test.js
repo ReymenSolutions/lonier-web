@@ -26,6 +26,8 @@ test("sirve páginas con URLs limpias y archivos públicos", async () => {
     ["/assets/serum-caja.webp", "image/webp"],
     ["/assets/og-image.jpg", "image/jpeg"],
     ["/robots.txt", "text/plain"],
+    ["/assets/fonts/marcellus-latin.woff2", "font/woff2"],
+    ["/assets/logo-160.webp", "image/webp"],
     ["/sitemap.xml", "application/xml"],
   ]) {
     const res = await get(path);

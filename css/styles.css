@@ -3087,10 +3087,51 @@ label {
   }
 }
 
+/* Nombre con la misma tipografía del logo: Marcellus (Google Fonts, licencia OFL),
+   un poco engrosada con text-stroke para igualar el trazo del logo. */
+@font-face {
+  font-family: "Marcellus";
+  src: url("/assets/fonts/marcellus-latin.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
 #site-header .brand .brand-text {
-  color: var(--text);
+  display: grid;
+  justify-items: center;
+  line-height: 1;
+  color: #231f1a;
+  font-family: "Marcellus", Georgia, "Times New Roman", serif;
+  font-weight: 400;
+  text-transform: uppercase;
+  letter-spacing: 0;
 }
 
 #site-header .brand .brand-text span {
-  color: var(--gold-dark);
+  color: inherit;
+}
+
+#site-header .brand .brand-name {
+  font-size: 26px;
+  letter-spacing: .01em;
+  -webkit-text-stroke: .02em currentColor;
+}
+
+#site-header .brand .brand-sub {
+  margin-top: 4px;
+  font-size: 12.5px;
+  letter-spacing: .32em;
+  margin-right: -.32em;
+  -webkit-text-stroke: .045em currentColor;
+}
+
+@media (max-width: 520px) {
+  #site-header .brand .brand-name {
+    font-size: 22px;
+  }
+
+  #site-header .brand .brand-sub {
+    font-size: 11px;
+  }
 }
