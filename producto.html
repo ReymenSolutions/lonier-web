@@ -38,6 +38,8 @@
           <div class="eyebrow" id="tagline"></div>
           <h1 class="pdp-title" id="name"></h1>
 
+          <div data-promo></div>
+
           <p id="description"></p>
 
           <div id="bundles"></div>
@@ -100,7 +102,7 @@
 
   <script type="module">
     import { STORE, PRODUCTS, getProduct, shippingSummary } from "/js/store.js";
-    import { initLayout, addToCart, addToCartAndOpen, imgFallback, whatsappUrl } from "/js/layout.js";
+    import { initLayout, addToCart, addToCartAndOpen, bindPrices, imgFallback, whatsappUrl } from "/js/layout.js";
     import { applyStock } from "/js/stock.js";
     import { trackViewItem } from "/js/analytics.js";
     import { mountBundlePicker } from "/js/bundles.js";
@@ -122,6 +124,7 @@
       document.getElementById("tagline").textContent = product.tagline;
       document.getElementById("name").textContent = product.name;
       document.getElementById("description").textContent = product.description;
+      bindPrices(product);
       document.getElementById("features").innerHTML = product.features.map((f) => `<div>${f}</div>`).join("");
       document.getElementById("howToUse").innerHTML = product.howToUse.map((s) => `<li>${s}</li>`).join("");
       document.getElementById("ingredients").innerHTML = (product.ingredients || [])

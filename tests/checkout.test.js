@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import mercadopago from "../api/checkout/mercadopago.js";
 import stripe from "../api/checkout/stripe.js";
 import { buildOrder } from "../api/_lib/order.js";
-import { PRODUCTS, lineTotalFor, shippingFor, freeShippingMessage } from "../js/store.js";
+import { PRODUCTS, activePromo, lineTotalFor, shippingFor, freeShippingMessage } from "../js/store.js";
 import { createFakeServices, customer, callNode as call, REDIS_URL } from "./helpers.js";
 
 let services;
@@ -150,4 +150,13 @@ test("responde 502 si la pasarela falla", async () => {
   const { status } = await call(mercadopago, { items: [{ id: "lonier-skin-serum", qty: 1 }], customer });
   console.error = original;
   assert.equal(status, 502);
+});
+
+test("promoción: se muestra mientras esté vigente y se oculta después de la fecha de fin", () => {
+  const base = { ...PRODUCTS[0], promo: { label: "Oferta por tiempo limitado", endsAt: "" } };
+  assert.deepEqual(activePromo(base), { label: "Oferta por tiempo limitado", until: "" });
+  const dated = { ...base, promo: { ...base.promo, endsAt: "2026-11-30" } };
+  assert.equal(activePromo(dated, new Date("2026-11-20T12:00:00-06:00")).until, "hasta el 30 de noviembre");
+  assert.equal(activePromo(dated, new Date("2026-12-01T12:00:00-06:00")), null);
+  assert.equal(activePromo({ ...base, compareAtPrice: null }), null);
 });

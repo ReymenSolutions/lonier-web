@@ -38,6 +38,9 @@ export const PRODUCTS = [
     // Precio de 1 pieza y precio "antes" por pieza (se muestra tachado).
     price: 299,
     compareAtPrice: 349,
+    // Promoción que se anuncia junto al precio. endsAt (AAAA-MM-DD) es opcional: si lo pones se muestra
+    // "hasta el 30 de noviembre" y el aviso se oculta solo después de esa fecha (el precio no cambia solo).
+    promo: { label: "Oferta por tiempo limitado", endsAt: "" },
     // Paquetes: precio total por N piezas. Las cantidades mayores se arman con los paquetes más grandes
     // (4 piezas = paquete de 3 + 1 pieza).
     bundles: [
@@ -156,6 +159,17 @@ export function shippingSummary() {
   const { fee, label } = STORE.shipping;
   const rule = freeShippingRule();
   return `${label}: ${formatMXN(fee)}` + (rule ? `. Gratis ${rule}` : "");
+}
+
+// Devuelve { label, until } si la promoción está vigente, o null.
+export function activePromo(product, now = new Date()) {
+  const promo = product.promo;
+  if (!promo || !product.compareAtPrice || product.compareAtPrice <= product.price) return null;
+  if (!promo.endsAt) return { label: promo.label, until: "" };
+  const end = new Date(`${promo.endsAt}T23:59:59-06:00`);
+  if (Number.isNaN(end.getTime()) || now > end) return null;
+  const until = end.toLocaleDateString("es-MX", { day: "numeric", month: "long", timeZone: "America/Mexico_City" });
+  return { label: promo.label, until: `hasta el ${until}` };
 }
 
 export function discountPercent(product) {

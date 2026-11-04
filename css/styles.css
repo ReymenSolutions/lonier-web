@@ -2716,3 +2716,103 @@ label {
 .bundle-side {
   min-width: 0;
 }
+
+/* ---------- Etiquetas de paquete discretas ---------- */
+
+.bundle-badge {
+  top: -10px;
+  right: 18px;
+  gap: 0;
+  padding: 3px 11px;
+  border-radius: 999px;
+  background: #fbf7ef;
+  color: var(--gold-dark);
+  border: 1px solid rgba(159,125,56,.5);
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: .18em;
+  box-shadow: 0 0 0 4px var(--bg);
+}
+
+.bundle-card.selected .bundle-badge {
+  background: var(--text);
+  color: #e9d6ad;
+  border-color: var(--text);
+}
+
+/* ---------- Precio de promoción ---------- */
+
+.promo-price {
+  display: grid;
+  gap: 10px;
+  justify-items: start;
+  margin: 14px 0 22px;
+}
+
+.promo-row {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+}
+
+.promo-row s {
+  color: var(--muted);
+  font-size: 22px;
+  font-weight: 600;
+  text-decoration-thickness: 1.5px;
+}
+
+.promo-row strong {
+  font-size: 44px;
+  font-weight: 900;
+  letter-spacing: -0.05em;
+  line-height: 1;
+}
+
+.promo-row small {
+  color: var(--muted);
+  font-weight: 700;
+  font-size: 14px;
+  margin-left: -4px;
+}
+
+.promo-off {
+  align-self: center;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: .04em;
+  color: var(--gold-dark);
+  border: 1px solid rgba(159,125,56,.5);
+  border-radius: 999px;
+  padding: 3px 10px;
+}
+
+.promo-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 14px 7px 12px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #1f1f1f, #3a3227);
+  color: #ecdcb8;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+
+.promo-tag .icon {
+  color: var(--gold);
+}
+
+.pdp .promo-price {
+  margin-top: 10px;
+}
+
+.bundle-save {
+  background: #f3ead9;
+  color: #7a5a1e;
+  font-weight: 700;
+  letter-spacing: .02em;
+}

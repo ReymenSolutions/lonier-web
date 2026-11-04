@@ -2,6 +2,7 @@
 import {
   STORE,
   PLACEHOLDER_IMAGE,
+  activePromo,
   discountPercent,
   formatMXN,
   formatPrice,
@@ -210,9 +211,29 @@ export function addToCartAndOpen(id, qty = 1) {
   openCart();
 }
 
-// Rellena los elementos marcados con data-price / data-compare / data-discount con los datos del catálogo,
-// para que el precio solo se cambie en js/store.js.
+// Precio tachado → precio de oferta, con el aviso de promoción por tiempo limitado.
+export function promoBlock(product) {
+  const promo = activePromo(product);
+  const pct = discountPercent(product);
+  return `
+    <div class="promo-price">
+      <div class="promo-row">
+        ${product.compareAtPrice > product.price ? `<s>${formatPrice(product.compareAtPrice)}</s>` : ""}
+        <strong>${formatPrice(product.price)}</strong><small>MXN</small>
+        ${pct ? `<span class="promo-off">-${pct}%</span>` : ""}
+      </div>
+      ${promo ? `<div class="promo-tag">${icon("clock", { size: 14 })}<span>${promo.label}${promo.until ? ` · ${promo.until}` : ""}</span></div>` : ""}
+    </div>`;
+}
+
+// Rellena los elementos marcados con data-price / data-compare / data-discount / data-promo con los datos
+// del catálogo, para que el precio solo se cambie en js/store.js.
 export function bindPrices(product) {
+  const promo = activePromo(product);
+  document.querySelectorAll("[data-promo]").forEach((el) => (el.innerHTML = promoBlock(product)));
+  document.querySelectorAll("[data-promo-label]").forEach((el) => {
+    if (promo) el.textContent = `${promo.label}${promo.until ? ` · ${promo.until}` : ""}`;
+  });
   document.querySelectorAll("[data-price]").forEach((el) => (el.textContent = `$${product.price}`));
   document.querySelectorAll("[data-compare]").forEach((el) => {
     el.textContent = product.compareAtPrice ? `$${product.compareAtPrice}` : "";

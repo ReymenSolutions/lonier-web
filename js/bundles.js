@@ -7,12 +7,11 @@ function card(product, bundle, name) {
   const savings = compare - bundle.price;
   const shipping = shippingFor(bundle.qty, bundle.price);
   const each = Math.round((bundle.price / bundle.qty) * 100) / 100;
-  const badgeIcon = bundle.qty === 3 ? "sparkles" : "star";
 
   return `
     <label class="bundle-card${bundle.highlight ? " featured" : ""}" data-bundle="${bundle.qty}">
       <input type="radio" name="${name}" value="${bundle.qty}" />
-      ${bundle.badge ? `<span class="bundle-badge">${icon(badgeIcon, { size: 12 })}${bundle.badge}</span>` : ""}
+      ${bundle.badge ? `<span class="bundle-badge">${bundle.badge}</span>` : ""}
       <span class="bundle-radio" aria-hidden="true"></span>
       <span class="bundle-main">
         <span class="bundle-title">${bundle.qty} ${bundle.qty === 1 ? "frasco" : "frascos"} Lonier Serum</span>
