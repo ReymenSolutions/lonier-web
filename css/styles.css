@@ -2735,9 +2735,9 @@ label {
 }
 
 .bundle-card.selected .bundle-badge {
-  background: var(--text);
-  color: #e9d6ad;
-  border-color: var(--text);
+  background: var(--gold-dark);
+  color: white;
+  border-color: var(--gold-dark);
 }
 
 /* ---------- Precio de promoción ---------- */
@@ -2794,8 +2794,8 @@ label {
   gap: 8px;
   padding: 7px 14px 7px 12px;
   border-radius: 999px;
-  background: linear-gradient(135deg, #1f1f1f, #3a3227);
-  color: #ecdcb8;
+  background: linear-gradient(135deg, var(--gold), var(--gold-dark));
+  color: white;
   font-size: 12px;
   font-weight: 700;
   letter-spacing: .1em;
@@ -2803,7 +2803,7 @@ label {
 }
 
 .promo-tag .icon {
-  color: var(--gold);
+  color: white;
 }
 
 .pdp .promo-price {
