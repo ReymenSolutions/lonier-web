@@ -3317,8 +3317,18 @@ html.is-loading body::after {
   transition: opacity .35s ease;
 }
 
-/* Fondo crema. La gota se centra con svh (alto de la pantalla con la barra del navegador visible),
-   que no cambia mientras carga; con % brincaba en iPhone al empezar la carga de la página nueva. */
+/* La gota se coloca a una distancia fija desde arriba, no centrada: en iPhone, al empezar a cargar la
+   página nueva, el navegador todavía no sabe el alto real de la pantalla y todo lo centrado brincaba. */
+html.is-loading {
+  --loader-top: 230px;
+}
+
+@media (min-width: 900px) {
+  html.is-loading {
+    --loader-top: 300px;
+  }
+}
+
 html.is-loading::before {
   inset: 0;
   background: var(--bg);
@@ -3338,11 +3348,10 @@ html.is-loading:not(.loaded) {
 html.is-loading body::before {
   z-index: 1001;
   left: 50%;
-  top: 50%;
-  top: 50svh;
+  top: var(--loader-top);
   width: 55px;
   height: 84px;
-  margin: -62px 0 0 -27.5px;
+  margin: 0 0 0 -27.5px;
   background: #eadfc9;
   -webkit-mask: var(--drop-mask) center / contain no-repeat;
   mask: var(--drop-mask) center / contain no-repeat;
@@ -3352,11 +3361,10 @@ html.is-loading body::before {
 html.is-loading body::after {
   z-index: 1002;
   left: 50%;
-  top: 50%;
-  top: 50svh;
+  top: var(--loader-top);
   width: 55px;
   height: 84px;
-  margin: -62px 0 0 -27.5px;
+  margin: 0 0 0 -27.5px;
   background: var(--drop-img) center / contain no-repeat;
   clip-path: inset(100% 0 0 0);
   animation: drop-fill 1.3s cubic-bezier(.45, .05, .35, 1) infinite;
@@ -3368,9 +3376,8 @@ html.is-loading::after {
   content: "LONIER SKIN";
   left: 0;
   right: 0;
-  top: 50%;
-  top: 50svh;
-  margin-top: 40px;
+  top: var(--loader-top);
+  margin-top: 102px;
   text-align: center;
   font-family: "Marcellus", Georgia, serif;
   font-size: 13px;
