@@ -18,9 +18,17 @@ export function autoHideHeader(header) {
 
   function update() {
     ticking = false;
-    const y = Math.max(0, window.scrollY);
-    const delta = y - lastY;
     if (isPanelOpen()) return;
+    // Ignorar el rebote del iPhone al pasarse del inicio o del final de la página
+    // (si no, el encabezado aparece y desaparece muy rápido).
+    const max = document.documentElement.scrollHeight - window.innerHeight;
+    const raw = window.scrollY;
+    if (raw < 0 || raw > max - 2) {
+      lastY = Math.min(Math.max(raw, 0), max);
+      return;
+    }
+    const y = raw;
+    const delta = y - lastY;
 
     if (y <= header.offsetHeight) {
       header.classList.remove("header-hidden", "header-peek");

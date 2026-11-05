@@ -3364,17 +3364,23 @@ html.is-loading::after {
   color: #231f1a;
 }
 
-html.is-loading.loaded::before,
+/* Al terminar de cargar: la gota y el nombre se van de inmediato y solo el fondo se desvanece */
+html.is-loading.loaded::before {
+  opacity: 0;
+}
+
 html.is-loading.loaded::after,
 html.is-loading.loaded body::before,
 html.is-loading.loaded body::after {
   opacity: 0;
+  animation: none;
+  transition: none;
 }
 
 @keyframes drop-fill {
   0% { clip-path: inset(100% 0 0 0); }
   70% { clip-path: inset(0 0 0 0); }
-  100% { clip-path: inset(0 0 0 0); opacity: .9; }
+  100% { clip-path: inset(0 0 0 0); }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -3470,4 +3476,33 @@ body {
 
 .ptr.ready {
   box-shadow: 0 10px 26px rgba(159, 125, 56, .35);
+}
+
+/* ---------- Footer negro ---------- */
+
+.footer {
+  background: #111;
+  color: rgba(255, 255, 255, .62);
+  border-top: 0;
+  padding-bottom: calc(28px + env(safe-area-inset-bottom));
+}
+
+.footer strong {
+  color: white;
+}
+
+.footer-links a {
+  color: rgba(255, 255, 255, .72);
+}
+
+.footer-links a:hover {
+  color: var(--gold);
+}
+
+.footer-contact a {
+  color: white;
+}
+
+.footer-contact .icon {
+  color: #25d366;
 }
