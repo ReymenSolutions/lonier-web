@@ -264,21 +264,42 @@ export function initLayout() {
   });
   bindCartControls(document.getElementById("cartBody"));
 
-  // Logo y nombre: en la portada suben hasta arriba sin recargar; en otras páginas llevan al inicio.
+  // Logo y nombre: muestran la gota cargando y llevan al inicio; si ya estás en el inicio, lo refrescan desde arriba.
   document.querySelectorAll("[data-home]").forEach((link) =>
     link.addEventListener("click", (event) => {
-      if (location.pathname !== "/") return;
+      if (event.metaKey || event.ctrlKey || event.shiftKey || event.button !== 0) return; // abrir en otra pestaña
       event.preventDefault();
-      window.scrollTo({ top: 0, behavior: "smooth" });
-      if (location.hash) history.replaceState(null, "", "/");
+      goHome();
     })
   );
+  // Si el navegador regresa a esta página desde su caché (botón atrás), no dejar la gota encima.
+  window.addEventListener("pageshow", (event) => {
+    if (event.persisted) document.documentElement.classList.remove("is-loading", "loaded");
+  });
 
   renderIcons();
   document.querySelectorAll("img").forEach(imgFallback);
   window.addEventListener("cart:change", renderDrawer);
   renderDrawer();
   applyStock();
+}
+
+function goHome() {
+  const root = document.documentElement;
+  try {
+    sessionStorage.setItem("lonier_loader", "1");
+  } catch {}
+  root.classList.add("is-loading");
+  // Subir sin animación (la gota tapa la página): al recargar, el navegador regresa a esta posición.
+  root.style.scrollBehavior = "auto";
+  window.scrollTo(0, 0);
+  // Dejar que se pinte la gota antes de salir de la página.
+  requestAnimationFrame(() =>
+    setTimeout(() => {
+      if (location.pathname === "/" && !location.hash) location.reload();
+      else location.href = "/";
+    }, 120)
+  );
 }
 
 export function addToCart(id, qty = 1) {
