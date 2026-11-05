@@ -3545,3 +3545,19 @@ body {
 .footer-links a:hover {
   color: #e6c987;
 }
+
+/* Al empezar a cargar la página nueva, el iPhone dibuja los primeros cuadros desplazados (~110 px) y
+   luego los acomoda; cualquier cosa fija en pantalla "brincaba". Durante ese momento solo se ve el
+   fondo crema (clase loader-wait) y la gota aparece suavemente después. */
+html.is-loading::after,
+html.is-loading body::before,
+html.is-loading body::after {
+  transition: opacity .25s ease;
+}
+
+html.is-loading.loader-wait::after,
+html.is-loading.loader-wait body::before,
+html.is-loading.loader-wait body::after {
+  opacity: 0;
+  animation-play-state: paused;
+}

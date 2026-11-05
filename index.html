@@ -22,8 +22,9 @@
       try {
         if (!sessionStorage.getItem("lonier_loader")) return;
         sessionStorage.removeItem("lonier_loader");
-        var root = document.documentElement, start = Date.now();
-        root.classList.add("is-loading");
+        var root = document.documentElement, start = Date.now(), WAIT = 250, SHOW = 900;
+        root.classList.add("is-loading", "loader-wait");
+        setTimeout(function () { root.classList.remove("loader-wait"); }, WAIT);
         // Al tocar el logo o jalar para actualizar, la página siempre empieza hasta arriba.
         if ("scrollRestoration" in history) history.scrollRestoration = "manual";
         addEventListener("load", function () {
@@ -33,7 +34,7 @@
             if ("scrollRestoration" in history) history.scrollRestoration = "auto";
             root.classList.add("loaded");
             setTimeout(function () { root.classList.remove("is-loading", "loaded"); }, 360);
-          }, Math.max(0, 1100 - (Date.now() - start)));
+          }, Math.max(0, WAIT + SHOW - (Date.now() - start)));
         });
       } catch (e) {}
     })();

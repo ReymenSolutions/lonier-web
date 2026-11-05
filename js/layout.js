@@ -278,7 +278,7 @@ export function initLayout() {
 
   // Si el navegador regresa a esta página desde su caché (botón atrás), no dejar la gota encima.
   window.addEventListener("pageshow", (event) => {
-    if (event.persisted) document.documentElement.classList.remove("is-loading", "loaded");
+    if (event.persisted) document.documentElement.classList.remove("is-loading", "loaded", "loader-wait");
   });
 
   renderIcons();
@@ -295,7 +295,8 @@ function withLoader(go) {
   try {
     sessionStorage.setItem("lonier_loader", "1");
   } catch {}
-  root.classList.add("is-loading");
+  // Solo el fondo crema: la gota aparece ya en la página nueva (ver loader-wait en el CSS).
+  root.classList.add("is-loading", "loader-wait");
   // Subir sin animación (la gota tapa la página): al recargar, el navegador regresa a esta posición.
   root.style.scrollBehavior = "auto";
   window.scrollTo(0, 0);
