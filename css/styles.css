@@ -3561,3 +3561,14 @@ html.is-loading.loader-wait body::after {
   opacity: 0;
   animation-play-state: paused;
 }
+
+/* Lo que el iPhone muestra fuera de la página (debajo del footer al esconder la barra del navegador
+   o al pasarse del final) usa el fondo de <html>: negro, para que se vea como continuación del footer.
+   La página en sí sigue en crema (fondo del <body>). */
+html {
+  background: #111;
+}
+
+body {
+  background: var(--bg);
+}
