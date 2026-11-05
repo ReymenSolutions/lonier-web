@@ -3136,16 +3136,13 @@ label {
   }
 }
 
-/* Logo en la orilla izquierda; el nombre queda al centro */
-#site-header .nav-left {
+/* Logo y nombre juntos a la izquierda; enlaces al centro; carrito a la derecha */
+#site-header .brand {
   grid-column: 1;
   justify-self: start;
-  display: flex;
-  align-items: center;
-  gap: 28px;
 }
 
-.brand-mark {
-  display: inline-flex;
-  flex: none;
+#site-header .nav-links {
+  grid-column: 2;
+  justify-self: center;
 }
