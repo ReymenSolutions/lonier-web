@@ -3388,3 +3388,91 @@ html.is-loading.loaded body::after {
     clip-path: inset(0 0 0 0);
   }
 }
+
+/* ---------- Encabezado: se oculta al bajar, reaparece al subir ---------- */
+
+#site-header {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  transition: transform .3s ease;
+  will-change: transform;
+}
+
+#site-header .nav {
+  position: relative;
+}
+
+#site-header.header-hidden {
+  transform: translateY(-100%);
+}
+
+/* Al subir: solo la barra del logo, sin la franja de envío gratis */
+#site-header.header-peek {
+  transform: translateY(calc(-1 * var(--announcement-h, 0px)));
+}
+
+#site-header.header-peek .nav {
+  box-shadow: 0 10px 30px rgba(55, 43, 30, .08);
+}
+
+/* Las secciones a las que se salta con #ancla no quedan debajo del encabezado */
+section[id] {
+  scroll-margin-top: 84px;
+}
+
+/* ---------- Jalar para actualizar ---------- */
+
+html,
+body {
+  overscroll-behavior-y: none;
+}
+
+.ptr {
+  --pull: 0px;
+  --fill: 0;
+  position: fixed;
+  top: 0;
+  left: 50%;
+  z-index: 60;
+  width: 46px;
+  height: 46px;
+  margin-left: -23px;
+  border-radius: 50%;
+  background: white;
+  box-shadow: 0 10px 26px rgba(55, 43, 30, .18);
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(calc(var(--pull) - 56px)) scale(calc(.6 + var(--fill) * .4));
+}
+
+.ptr.pulling,
+.ptr.refreshing {
+  opacity: 1;
+}
+
+.ptr.returning {
+  transition: transform .3s ease, opacity .3s ease;
+}
+
+.ptr-drop {
+  position: relative;
+  width: 20px;
+  height: 28px;
+  background: #eadfc9;
+  -webkit-mask: var(--drop-mask) center / contain no-repeat;
+  mask: var(--drop-mask) center / contain no-repeat;
+}
+
+.ptr-fill {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, #e0bd6a, var(--gold) 45%, var(--gold-dark));
+  clip-path: inset(calc((1 - var(--fill)) * 100%) 0 0 0);
+}
+
+.ptr.ready {
+  box-shadow: 0 10px 26px rgba(159, 125, 56, .35);
+}

@@ -15,6 +15,7 @@ import { cart } from "./cart.js";
 import { applyStock } from "./stock.js";
 import { initAnalytics, trackAddToCart } from "./analytics.js";
 import { icon, renderIcons } from "./icons.js";
+import { autoHideHeader, pullToRefresh } from "./gestures.js";
 
 export function imgFallback(img) {
   const swap = () => {
@@ -272,6 +273,9 @@ export function initLayout() {
       goHome();
     })
   );
+  autoHideHeader(document.getElementById("site-header"));
+  pullToRefresh(refreshPage);
+
   // Si el navegador regresa a esta página desde su caché (botón atrás), no dejar la gota encima.
   window.addEventListener("pageshow", (event) => {
     if (event.persisted) document.documentElement.classList.remove("is-loading", "loaded");
@@ -284,7 +288,9 @@ export function initLayout() {
   applyStock();
 }
 
-function goHome() {
+// Muestra la gota cargando y luego ejecuta `go` (recargar o navegar). La página nueva la sigue mostrando
+// hasta terminar de cargar (ver el script del <head>).
+function withLoader(go) {
   const root = document.documentElement;
   try {
     sessionStorage.setItem("lonier_loader", "1");
@@ -294,12 +300,18 @@ function goHome() {
   root.style.scrollBehavior = "auto";
   window.scrollTo(0, 0);
   // Dejar que se pinte la gota antes de salir de la página.
-  requestAnimationFrame(() =>
-    setTimeout(() => {
-      if (location.pathname === "/" && !location.hash) location.reload();
-      else location.href = "/";
-    }, 120)
-  );
+  requestAnimationFrame(() => setTimeout(go, 120));
+}
+
+function goHome() {
+  withLoader(() => {
+    if (location.pathname === "/" && !location.hash) location.reload();
+    else location.href = "/";
+  });
+}
+
+function refreshPage() {
+  withLoader(() => location.reload());
 }
 
 export function addToCart(id, qty = 1) {
