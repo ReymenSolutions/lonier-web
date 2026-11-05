@@ -65,14 +65,18 @@ const header = `
   ${announcement}
   <nav class="nav">
     <div class="container nav-inner">
-      <div class="nav-links">
-        <a href="/tienda">Tienda</a>
-        <a href="/#ingredientes">Ingredientes</a>
-        <a href="/#como-usar">Cómo usar</a>
-        <a href="/#preguntas">Preguntas</a>
+      <div class="nav-left">
+        <a href="/" class="brand-mark" data-home aria-label="Lonier Skin, ir al inicio">
+          <img class="brand-logo" src="/assets/logo-gota-160.webp" alt="" width="52" height="52" />
+        </a>
+        <div class="nav-links">
+          <a href="/tienda">Tienda</a>
+          <a href="/#ingredientes">Ingredientes</a>
+          <a href="/#como-usar">Cómo usar</a>
+          <a href="/#preguntas">Preguntas</a>
+        </div>
       </div>
       <a href="/" class="brand" data-home aria-label="Lonier Skin, ir al inicio">
-        <img class="brand-logo" src="/assets/logo-gota-160.webp" alt="" width="52" height="52" />
         <span class="brand-text"><span class="brand-name">Lonier</span><span class="brand-sub">Skin</span></span>
       </a>
       <div class="nav-actions">

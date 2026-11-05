@@ -3135,3 +3135,17 @@ label {
     font-size: 11px;
   }
 }
+
+/* Logo en la orilla izquierda; el nombre queda al centro */
+#site-header .nav-left {
+  grid-column: 1;
+  justify-self: start;
+  display: flex;
+  align-items: center;
+  gap: 28px;
+}
+
+.brand-mark {
+  display: inline-flex;
+  flex: none;
+}
