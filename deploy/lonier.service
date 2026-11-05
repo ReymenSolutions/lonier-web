@@ -1,0 +1,28 @@
+# Servicio de systemd: mantiene la tienda corriendo y la reinicia si se cae o si reinicias el VPS.
+# setup.sh lo copia a /etc/systemd/system/lonier.service
+[Unit]
+Description=Lonier Skin (tienda en línea)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=lonier
+Group=lonier
+WorkingDirectory=/srv/lonier-web
+EnvironmentFile=/etc/lonier/lonier.env
+Environment=NODE_ENV=production
+Environment=HOST=127.0.0.1
+ExecStart=/usr/bin/node server.js
+Restart=always
+RestartSec=3
+
+# La tienda no necesita escribir en disco ni ver otros archivos del servidor.
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+PrivateDevices=true
+
+[Install]
+WantedBy=multi-user.target

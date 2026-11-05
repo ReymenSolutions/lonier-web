@@ -1,0 +1,28 @@
+# La tienda como contenedor detrás de nginx-proxy + acme-companion (ya instalados en el VPS).
+# nginx-proxy lee VIRTUAL_HOST y la publica; acme-companion saca el HTTPS con LETSENCRYPT_HOST.
+#
+#   cp .env.example .env      # y llena tus llaves
+#   docker compose up -d --build
+services:
+  lonier:
+    build: .
+    image: lonier-web:latest
+    container_name: lonier-web
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      HOST: 0.0.0.0
+      PORT: "3000"
+      VIRTUAL_HOST: lonier.mx,www.lonier.mx
+      VIRTUAL_PORT: "3000"
+      LETSENCRYPT_HOST: lonier.mx,www.lonier.mx
+      # www.lonier.mx → lonier.mx
+      CANONICAL_HOST: lonier.mx
+    networks:
+      - proxy
+
+networks:
+  proxy:
+    external: true
+    # La red donde está el contenedor nginx-proxy. Si se llama distinto: PROXY_NETWORK=otra docker compose up -d
+    name: ${PROXY_NETWORK:-proxy}

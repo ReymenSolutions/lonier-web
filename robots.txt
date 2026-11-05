@@ -1,0 +1,7 @@
+User-agent: *
+Disallow: /admin
+Disallow: /carrito
+Disallow: /gracias
+Disallow: /api/
+
+Sitemap: https://lonier.mx/sitemap.xml

@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="es-MX">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Políticas | Lonier Skin</title>
+  <meta name="description" content="Envíos, devoluciones, términos y condiciones y aviso de privacidad de Lonier Skin." />
+  <link rel="icon" href="/assets/favicon-gota.png" type="image/png" />
+  <link rel="apple-touch-icon" href="/assets/apple-touch-icon-gota.png" />
+  <script>
+    // Pantalla de carga con la gota (solo cuando se llegó tocando el logo). Ver js/layout.js.
+    (function () {
+      try {
+        if (!sessionStorage.getItem("lonier_loader")) return;
+        sessionStorage.removeItem("lonier_loader");
+        var root = document.documentElement, start = Date.now(), WAIT = 250, SHOW = 900;
+        root.classList.add("is-loading", "loader-wait");
+        setTimeout(function () { root.classList.remove("loader-wait"); }, WAIT);
+        // Al tocar el logo o jalar para actualizar, la página siempre empieza hasta arriba.
+        if ("scrollRestoration" in history) history.scrollRestoration = "manual";
+        addEventListener("load", function () {
+          scrollTo(0, 0);
+          setTimeout(function () {
+            scrollTo(0, 0);
+            if ("scrollRestoration" in history) history.scrollRestoration = "auto";
+            root.classList.add("loaded");
+            setTimeout(function () { root.classList.remove("is-loading", "loaded"); }, 360);
+          }, Math.max(0, WAIT + SHOW - (Date.now() - start)));
+        });
+      } catch (e) {}
+    })();
+  </script>
+  <link rel="preload" href="/assets/fonts/marcellus-latin.woff2" as="font" type="font/woff2" crossorigin />
+  <link rel="stylesheet" href="/css/styles.css" />
+</head>
+
+<body>
+  <div id="site-header"></div>
+
+  <!--
+    PLANTILLA: sustituye todo lo que está entre [corchetes] con tus datos reales
+    y pide a un abogado o contador que revise el texto antes de publicar la tienda.
+  -->
+  <main class="section">
+    <div class="container narrow legal">
+      <h1 class="page-title">Políticas de Lonier Skin</h1>
+      <p class="muted">Última actualización: [fecha]</p>
+
+      <h2 id="envios">Envíos</h2>
+      <p>
+        Enviamos a toda la República Mexicana mediante paquetería.
+      </p>
+      <ul>
+        <li><strong>Costo de envío:</strong> $99 MXN por pedido.</li>
+        <li><strong>Envío gratis</strong> en pedidos de 3 piezas o más, o en compras desde $999 MXN.</li>
+        <li>El costo de envío se muestra en el carrito antes de pagar.</li>
+        <li>Preparamos tu pedido en un máximo de [2] días hábiles después de acreditado el pago.</li>
+        <li>La entrega tarda de 3 a 7 días hábiles según tu ubicación. Algunas zonas extendidas pueden tardar más.</li>
+        <li>Te enviamos el número de guía por correo o WhatsApp en cuanto sale tu paquete.</li>
+        <li>Si pagas en OXXO, el pedido se prepara cuando Mercado Pago, PayPal o Stripe nos confirman el pago (normalmente 1 a 2 días hábiles).</li>
+      </ul>
+
+      <h2 id="devoluciones">Cambios y devoluciones</h2>
+      <p>
+        Por tratarse de un producto de cuidado personal, solo aceptamos devoluciones de productos cerrados, sin abrir
+        y en su empaque original, dentro de los [30] días naturales siguientes a la entrega. Si tu producto llegó dañado
+        o incorrecto, escríbenos dentro de los [5] días siguientes a la entrega con fotos del paquete y lo reponemos sin costo.
+      </p>
+      <p>
+        Para iniciar una devolución escríbenos por WhatsApp al +52 868 186 5718 o a [correo de contacto] con tu número de pedido.
+        Los reembolsos se hacen al mismo método de pago en un plazo de hasta [10] días hábiles después de recibir el producto.
+      </p>
+
+      <h2 id="terminos">Términos y condiciones</h2>
+      <p>
+        Este sitio es operado por [nombre o razón social], con domicilio en [domicilio fiscal] y RFC [RFC]
+        (“Lonier Skin”). Al comprar en este sitio aceptas estos términos.
+      </p>
+      <ul>
+        <li>Los precios están en pesos mexicanos e incluyen IVA. El envío cuesta $99 MXN por pedido, o es gratis en pedidos de 3 piezas o más o en compras desde $999 MXN, y se muestra por separado antes de pagar.</li>
+        <li>Las compras están sujetas a disponibilidad de inventario. Si por alguna razón no pudiéramos surtir tu pedido, te contactaremos y te reembolsaremos el total.</li>
+        <li>Los precios y promociones pueden cambiar sin previo aviso, pero respetamos el precio vigente al momento de tu compra.</li>
+        <li>Los pagos se procesan a través de Mercado Pago, PayPal o Stripe. Lonier Skin no almacena datos de tarjetas.</li>
+        <li>Los paquetes de 2 y 3 piezas tienen precio especial. Las cantidades mayores se cobran combinando esos paquetes.</li>
+        <li>Un pedido se confirma una vez que el pago es acreditado.</li>
+        <li>Nuestros productos son cosméticos y no sustituyen tratamientos médicos. Suspende su uso si notas irritación y consulta a un especialista.</li>
+        <li>Para cualquier aclaración puedes contactarnos por los medios indicados en esta página. También puedes acudir a la Procuraduría Federal del Consumidor (PROFECO).</li>
+      </ul>
+
+      <h2 id="privacidad">Aviso de privacidad</h2>
+      <p>
+        [Nombre o razón social], con domicilio en [domicilio], es responsable del tratamiento de tus datos personales
+        conforme a la Ley Federal de Protección de Datos Personales en Posesión de los Particulares.
+      </p>
+      <p>
+        <strong>Datos que recabamos:</strong> nombre, correo electrónico, teléfono y dirección de envío.
+        <strong>Finalidades:</strong> procesar y enviar tu pedido, darte seguimiento y atender aclaraciones.
+        De forma secundaria, y solo si nos lo autorizas, enviarte promociones; puedes negarte escribiendo a [correo de contacto].
+      </p>
+      <p>
+        Tus datos se comparten únicamente con los proveedores que necesitamos para cumplir con tu pedido: los procesadores de pago
+        (Mercado Pago, PayPal, Stripe), la paquetería, nuestro proveedor de correo electrónico (para enviarte la confirmación y la guía)
+        y nuestro proveedor de alojamiento y base de datos, donde se guarda tu pedido.
+        Puedes ejercer tus derechos de acceso, rectificación, cancelación u oposición (ARCO) escribiendo a [correo de contacto].
+      </p>
+
+      <h3>Cookies y medición</h3>
+      <p>
+        Usamos cookies y tecnologías similares de Google Analytics y Meta (Facebook e Instagram) para saber cómo se usa la tienda
+        y medir nuestros anuncios, por ejemplo cuántas personas agregan productos al carrito o compran.
+        Estas herramientas no reciben los datos de tu tarjeta. Puedes bloquear o borrar las cookies desde la configuración de tu navegador.
+        Tu carrito y tus datos de envío se guardan en tu propio navegador para que no tengas que escribirlos de nuevo.
+      </p>
+    </div>
+  </main>
+
+  <div id="site-footer"></div>
+
+  <script type="module">
+    import { initLayout } from "/js/layout.js";
+    initLayout();
+  </script>
+</body>
+</html>
