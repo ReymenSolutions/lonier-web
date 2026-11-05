@@ -19,8 +19,13 @@
         sessionStorage.removeItem("lonier_loader");
         var root = document.documentElement, start = Date.now();
         root.classList.add("is-loading");
+        // Al tocar el logo o jalar para actualizar, la página siempre empieza hasta arriba.
+        if ("scrollRestoration" in history) history.scrollRestoration = "manual";
         addEventListener("load", function () {
+          scrollTo(0, 0);
           setTimeout(function () {
+            scrollTo(0, 0);
+            if ("scrollRestoration" in history) history.scrollRestoration = "auto";
             root.classList.add("loaded");
             setTimeout(function () { root.classList.remove("is-loading", "loaded"); }, 360);
           }, Math.max(0, 1100 - (Date.now() - start)));

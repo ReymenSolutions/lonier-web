@@ -3323,6 +3323,16 @@ html.is-loading::before {
   background: var(--bg);
 }
 
+/* Mientras está la gota, la página no se dibuja (en iPhone, las fotos con esquinas redondeadas
+   se colaban por encima del fondo). Al terminar de cargar vuelve a aparecer bajo el fondo que se desvanece. */
+html.is-loading:not(.loaded) body > * {
+  visibility: hidden;
+}
+
+html.is-loading:not(.loaded) {
+  background: var(--bg);
+}
+
 /* Gota vacía (contorno suave) */
 html.is-loading body::before {
   z-index: 1001;
