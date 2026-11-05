@@ -17,19 +17,39 @@
       try {
         if (!sessionStorage.getItem("lonier_loader")) return;
         sessionStorage.removeItem("lonier_loader");
-        var root = document.documentElement, start = Date.now(), WAIT = 250, SHOW = 900;
+        var root = document.documentElement, start = Date.now(), WAIT = 250, MAX_WAIT = 1200, SHOW = 900;
+        var shownAt = 0, last = "", stableFrames = 0;
         root.classList.add("is-loading", "loader-wait");
-        setTimeout(function () { root.classList.remove("loader-wait"); }, WAIT);
+        // La gota aparece cuando el tamaño de la pantalla deja de cambiar (en iPhone se acomoda al cargar,
+        // y tarda más después de jalar para actualizar). Nunca antes de WAIT ni después de MAX_WAIT.
+        (function settle() {
+          var v = window.visualViewport;
+          var size = innerWidth + "x" + innerHeight + (v ? ":" + v.height + ":" + v.offsetTop + ":" + v.pageTop : "");
+          stableFrames = size === last ? stableFrames + 1 : 0;
+          last = size;
+          var elapsed = Date.now() - start;
+          if ((elapsed >= WAIT && stableFrames >= 10) || elapsed >= MAX_WAIT) {
+            root.classList.remove("loader-wait");
+            shownAt = Date.now();
+            return;
+          }
+          requestAnimationFrame(settle);
+        })();
         // Al tocar el logo o jalar para actualizar, la página siempre empieza hasta arriba.
         if ("scrollRestoration" in history) history.scrollRestoration = "manual";
         addEventListener("load", function () {
           scrollTo(0, 0);
-          setTimeout(function () {
+          (function finish() {
+            // La gota se queda al menos SHOW ms desde que apareció, para que se vea el llenado.
+            if (!shownAt) return requestAnimationFrame(finish);
+            setTimeout(done, Math.max(0, SHOW - (Date.now() - shownAt)));
+          })();
+          function done() {
             scrollTo(0, 0);
             if ("scrollRestoration" in history) history.scrollRestoration = "auto";
             root.classList.add("loaded");
             setTimeout(function () { root.classList.remove("is-loading", "loaded"); }, 360);
-          }, Math.max(0, WAIT + SHOW - (Date.now() - start)));
+          }
         });
       } catch (e) {}
     })();
