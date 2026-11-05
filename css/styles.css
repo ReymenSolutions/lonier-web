@@ -3506,3 +3506,21 @@ body {
 .footer-contact .icon {
   color: #25d366;
 }
+
+/* Footer: letras doradas sobre negro */
+.footer {
+  color: rgba(200, 164, 93, .78);
+}
+
+.footer strong,
+.footer-contact a {
+  color: var(--gold);
+}
+
+.footer-links a {
+  color: var(--gold);
+}
+
+.footer-links a:hover {
+  color: #e6c987;
+}
