@@ -65,10 +65,15 @@ const header = `
   ${announcement}
   <nav class="nav">
     <div class="container nav-inner">
-      <a href="/" class="brand" data-home aria-label="Lonier Skin, ir al inicio">
-        <img class="brand-logo" src="/assets/logo-gota-160.webp" alt="" width="52" height="52" />
-        <span class="brand-text"><span class="brand-name">Lonier</span><span class="brand-sub">Skin</span></span>
-      </a>
+      <div class="nav-start">
+        <button class="menu-btn" id="openMenu" aria-label="Abrir menú" aria-controls="menuPanel" aria-expanded="false">
+          ${icon("menu", { size: 24 })}
+        </button>
+        <a href="/" class="brand" data-home aria-label="Lonier Skin, ir al inicio">
+          <img class="brand-logo" src="/assets/logo-gota-160.webp" alt="" width="52" height="52" />
+          <span class="brand-text"><span class="brand-name">Lonier</span><span class="brand-sub">Skin</span></span>
+        </a>
+      </div>
       <div class="nav-links">
         <a href="/tienda">Tienda</a>
         <a href="/#ingredientes">Ingredientes</a>
@@ -106,6 +111,37 @@ const footer = `
     </div>
   </footer>`;
 
+// Menú de celular: se abre desde la izquierda con el botón de hamburguesa.
+const menu = `
+  <aside class="menu-panel" id="menuPanel" aria-label="Menú" aria-hidden="true">
+    <div class="menu-head">
+      <a href="/" class="brand menu-brand" data-home aria-label="Lonier Skin, ir al inicio">
+        <img class="brand-logo" src="/assets/logo-gota-160.webp" alt="" width="44" height="44" />
+        <span class="brand-text"><span class="brand-name">Lonier</span><span class="brand-sub">Skin</span></span>
+      </a>
+      <button class="close-cart" id="closeMenu" aria-label="Cerrar menú">${icon("x", { size: 20 })}</button>
+    </div>
+    <nav class="menu-links">
+      <a href="/" data-home>Inicio</a>
+      <a href="/tienda">Tienda</a>
+      <a href="/producto?id=lonier-skin-serum">Lonier Serum</a>
+      <a href="/#ingredientes">Ingredientes</a>
+      <a href="/#como-usar">Cómo usar</a>
+      <a href="/#resultados">Antes y después</a>
+      <a href="/#preguntas">Preguntas frecuentes</a>
+    </nav>
+    <div class="menu-actions">
+      <a class="btn btn-gold" href="/producto?id=lonier-skin-serum">Comprar ahora</a>
+      <a class="btn btn-whatsapp" href="https://wa.me/${STORE.whatsapp}" target="_blank" rel="noopener">${icon("whatsapp", { size: 18 })}Escríbenos por WhatsApp</a>
+    </div>
+    <div class="menu-foot">
+      <a href="/politicas#envios">Envíos</a>
+      <a href="/politicas#devoluciones">Devoluciones</a>
+      <a href="/politicas#terminos">Términos</a>
+      <a href="/politicas#privacidad">Aviso de privacidad</a>
+    </div>
+  </aside>`;
+
 const drawer = `
   <div class="overlay" id="overlay"></div>
   <aside class="cart-panel" id="cartPanel" aria-label="Carrito">
@@ -126,6 +162,7 @@ const drawer = `
   <a class="whatsapp-float" href="https://wa.me/${STORE.whatsapp}" target="_blank" rel="noopener" aria-label="Escríbenos por WhatsApp">${icon("whatsapp", { size: 28 })}</a>`;
 
 export function openCart() {
+  closeMenu();
   document.getElementById("cartPanel").classList.add("active");
   document.getElementById("overlay").classList.add("active");
   document.body.style.overflow = "hidden";
@@ -133,6 +170,25 @@ export function openCart() {
 
 export function closeCart() {
   document.getElementById("cartPanel").classList.remove("active");
+  document.getElementById("overlay").classList.remove("active");
+  document.body.style.overflow = "";
+}
+
+function openMenu() {
+  closeCart();
+  document.getElementById("menuPanel").classList.add("active");
+  document.getElementById("menuPanel").setAttribute("aria-hidden", "false");
+  document.getElementById("openMenu").setAttribute("aria-expanded", "true");
+  document.getElementById("overlay").classList.add("active");
+  document.body.style.overflow = "hidden";
+}
+
+function closeMenu() {
+  const panel = document.getElementById("menuPanel");
+  if (!panel?.classList.contains("active")) return;
+  panel.classList.remove("active");
+  panel.setAttribute("aria-hidden", "true");
+  document.getElementById("openMenu").setAttribute("aria-expanded", "false");
   document.getElementById("overlay").classList.remove("active");
   document.body.style.overflow = "";
 }
@@ -185,14 +241,26 @@ export function initLayout() {
   initAnalytics();
   document.getElementById("site-header").innerHTML = header;
   document.getElementById("site-footer").innerHTML = footer;
-  document.body.insertAdjacentHTML("afterbegin", drawer);
+  document.body.insertAdjacentHTML("afterbegin", drawer + menu);
 
   document.getElementById("openCart").addEventListener("click", openCart);
   document.getElementById("closeCart").addEventListener("click", closeCart);
   document.getElementById("keepShopping").addEventListener("click", closeCart);
-  document.getElementById("overlay").addEventListener("click", closeCart);
+  document.getElementById("overlay").addEventListener("click", () => {
+    closeCart();
+    closeMenu();
+  });
+  document.getElementById("openMenu").addEventListener("click", openMenu);
+  document.getElementById("closeMenu").addEventListener("click", closeMenu);
+  // Al elegir una sección se cierra el menú (incluye los enlaces a #secciones de la misma página).
+  document.getElementById("menuPanel").addEventListener("click", (event) => {
+    if (event.target.closest("a")) closeMenu();
+  });
   document.addEventListener("keydown", (event) => {
-    if (event.key === "Escape") closeCart();
+    if (event.key === "Escape") {
+      closeCart();
+      closeMenu();
+    }
   });
   bindCartControls(document.getElementById("cartBody"));
 

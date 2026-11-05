@@ -3146,3 +3146,153 @@ label {
   grid-column: 2;
   justify-self: center;
 }
+
+/* ---------- Menú de hamburguesa (celular y tablet) ---------- */
+
+#site-header .nav-start {
+  grid-column: 1;
+  justify-self: start;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+#site-header .nav-start .brand {
+  grid-column: auto;
+}
+
+.menu-btn {
+  display: none;
+  width: 44px;
+  height: 44px;
+  margin-left: -8px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--text);
+  place-items: center;
+  cursor: pointer;
+}
+
+.menu-btn:active {
+  background: var(--soft);
+}
+
+.menu-btn:focus-visible {
+  outline: 2px solid var(--gold);
+}
+
+.menu-panel {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 90;
+  width: min(340px, 86%);
+  height: 100vh;
+  height: 100dvh;
+  background: var(--bg);
+  box-shadow: none;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  transform: translateX(-100%);
+  visibility: hidden;
+  transition: transform .3s ease, visibility .3s;
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.menu-panel.active {
+  transform: translateX(0);
+  visibility: visible;
+  box-shadow: 25px 0 70px rgba(0,0,0,.18);
+}
+
+.menu-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 18px;
+  border-bottom: 1px solid var(--border);
+}
+
+.menu-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.menu-brand .brand-logo {
+  width: 44px;
+  height: 44px;
+}
+
+.menu-brand .brand-text {
+  font-weight: 400;
+  letter-spacing: 0;
+  display: grid;
+  justify-items: center;
+  line-height: 1;
+  color: #231f1a;
+  font-family: "Marcellus", Georgia, serif;
+  text-transform: uppercase;
+}
+
+.menu-brand .brand-text span {
+  color: inherit;
+}
+
+.menu-brand .brand-name {
+  font-size: 20px;
+  -webkit-text-stroke: .02em currentColor;
+}
+
+.menu-brand .brand-sub {
+  margin-top: 3px;
+  font-size: 10px;
+  letter-spacing: .32em;
+  margin-right: -.32em;
+  -webkit-text-stroke: .045em currentColor;
+}
+
+.menu-links {
+  display: grid;
+  padding: 10px 0;
+}
+
+.menu-links a {
+  padding: 15px 22px;
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  border-bottom: 1px solid var(--border);
+}
+
+.menu-links a:active {
+  background: var(--soft);
+}
+
+.menu-actions {
+  display: grid;
+  gap: 10px;
+  padding: 18px 22px;
+}
+
+.menu-actions .btn {
+  width: 100%;
+}
+
+.menu-foot {
+  margin-top: auto;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  padding: 18px 22px 24px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+@media (max-width: 900px) {
+  .menu-btn {
+    display: grid;
+  }
+}
